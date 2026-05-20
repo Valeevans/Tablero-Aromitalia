@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero de Indicadores — Aromitalia</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f4f4f0;color:#222;font-size:14px}
+:root{--navy:#1B2A4A;--gold:#C9A84C;--green:#2E7D32;--yellow:#F9A825;--red:#C62828;--lightbg:#EFF2F7}
+.topbar{background:var(--navy);color:#fff;padding:.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--gold)}
+.topbar-left{display:flex;align-items:center;gap:1rem}
+.topbar-title{font-size:16px;font-weight:600;letter-spacing:.02em}
+.topbar-sub{font-size:11px;color:var(--gold);margin-top:2px;letter-spacing:.04em}
+.topbar-right{font-size:11px;color:var(--gold);text-align:right}
+.sync-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600}
+.sync-badge.ok{background:#1B5E20;color:#A5D6A7}
+.sync-badge.loading{background:#1A237E;color:#90CAF9}
+.sync-badge.error{background:#7f1d1d;color:#FECACA}
+.container{max-width:1140px;margin:0 auto;padding:1.2rem 1.5rem}
+.tabs{display:flex;border-bottom:2px solid var(--navy);margin-bottom:1.2rem;overflow-x:auto;gap:0}
+.tab{font-size:12px;padding:.5rem 1rem;cursor:pointer;color:#5F5E5A;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;white-space:nowrap;font-family:Arial,sans-serif;font-weight:400}
+.tab.active{color:var(--navy);border-bottom-color:var(--gold);font-weight:600}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.section-title{font-size:10px;font-weight:600;color:var(--navy);letter-spacing:.12em;text-transform:uppercase;margin:1.2rem 0 .6rem;padding-bottom:.3rem;border-bottom:2px solid var(--gold)}
+.section-title:first-of-type{margin-top:0}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin-bottom:1rem}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:1rem}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:.8rem;margin-bottom:1rem}
+.kpi{background:#fff;border-radius:8px;padding:1rem;border-left:4px solid #ccc;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.kpi.green{border-left-color:var(--green)}.kpi.yellow{border-left-color:var(--yellow)}.kpi.red{border-left-color:var(--red)}.kpi.grey{border-left-color:#9E9E9E}
+.kpi-label{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem}
+.kpi-value{font-size:26px;font-weight:700;line-height:1;color:var(--navy)}
+.kpi-unit{font-size:12px;color:#888;margin-left:3px}
+.kpi-meta{font-size:11px;color:#888;margin-top:.4rem}
+.kpi-semaphore{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.sem-green{background:var(--green)}.sem-yellow{background:var(--yellow)}.sem-red{background:var(--red)}.sem-grey{background:#9E9E9E}
+.chart-box{background:#fff;border-radius:8px;padding:1rem;box-shadow:0 1px 3px rgba(0,0,0,.07);margin-bottom:.8rem}
+.chart-title{font-size:11px;font-weight:600;color:var(--navy);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em}
+.chart-sub{font-size:10px;color:#888;margin-top:-.3rem;margin-bottom:.6rem}
+.chart-wrap{position:relative;height:180px}.chart-wrap.tall{height:220px}
+.data-table{width:100%;border-collapse:collapse;font-size:12px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.data-table th{background:var(--navy);color:#fff;padding:.5rem .7rem;text-align:left;font-weight:600;font-size:11px;letter-spacing:.04em}
+.data-table td{padding:.45rem .7rem;border-bottom:1px solid #eee;vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:nth-child(even) td{background:#F7F8FA}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.04em}
+.badge-green{background:#E8F5E9;color:#2E7D32}.badge-yellow{background:#FFFDE7;color:#F57F17}
+.badge-red{background:#FFEBEE;color:#C62828}.badge-grey{background:#ECEFF1;color:#546E7A}
+.alert-box{border-radius:6px;padding:.6rem .9rem;font-size:12px;margin-bottom:.5rem;display:flex;align-items:flex-start;gap:.5rem}
+.a-warn{background:#FFF9C4;border-left:3px solid #F9A825;color:#5D4037}
+.a-danger{background:#FFEBEE;border-left:3px solid #C62828;color:#B71C1C}
+.a-ok{background:#E8F5E9;border-left:3px solid #2E7D32;color:#1B5E20}
+.a-info{background:#E3F2FD;border-left:3px solid #1565C0;color:#0D47A1}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.8rem}
+.form-group{display:flex;flex-direction:column;gap:3px}
+.form-group label{font-size:11px;font-weight:600;color:var(--navy)}
+.form-group input,.form-group select{padding:.4rem .6rem;border:1px solid #ccc;border-radius:4px;font-size:13px;font-family:Arial,sans-serif}
+.btn{padding:.45rem 1rem;border:none;border-radius:5px;cursor:pointer;font-size:13px;font-weight:600;font-family:Arial,sans-serif;transition:opacity .15s}
+.btn:hover{opacity:.85}.btn-primary{background:var(--navy);color:#fff}.btn-gold{background:var(--gold);color:#fff}
+.btn-outline{background:#fff;color:var(--navy);border:1.5px solid var(--navy)}.btn-danger{background:#C62828;color:#fff}
+.btn-sm{padding:.3rem .7rem;font-size:11px}.btn-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem}
+.big-stat{text-align:center;padding:1.5rem;background:#fff;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.big-stat-num{font-size:48px;font-weight:700;line-height:1;color:var(--navy)}
+.big-stat-label{font-size:12px;color:#888;margin-top:.3rem;text-transform:uppercase;letter-spacing:.06em}
+.footer{text-align:center;font-size:10px;color:#888;padding:1.5rem;margin-top:2rem;border-top:1px solid #ddd}
+@media(max-width:700px){.grid4,.grid3{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+@media(max-width:400px){.grid4,.grid3,.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div>
+      <div class="topbar-title">Tablero de Indicadores de Gestión</div>
+      <div class="topbar-sub">ELABORACIÓN DE BASES PARA HELADERÍA Y PASTELERÍA &bull; ISO 9001:2015 &bull; Cód: R-CA-016</div>
+    </div>
+  </div>
+  <div class="topbar-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+    <span id="sync-status" class="sync-badge loading">&#9203; Conectando...</span>
+    <span id="last-sync" style="font-size:10px;color:#aaa"></span>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('resumen')">Resumen ejecutivo</button>
+    <button class="tab" onclick="showTab('objetivos')">Objetivos 2025</button>
+    <button class="tab" onclick="showTab('calidad')">Calidad</button>
+    <button class="tab" onclick="showTab('produccion')">Producción</button>
+    <button class="tab" onclick="showTab('clientes')">Clientes</button>
+    <button class="tab" onclick="showTab('rrhh')">RRHH &amp; Formación</button>
+    <button class="tab" onclick="showTab('proveedores')">Proveedores &amp; Mant.</button>
+    <button class="tab" onclick="showTab('cargar')">&#9998; Cargar datos</button>
+    <button class="tab" onclick="showTab('config')">&#9881; Configuración</button>
+  </div>
+
+  <!-- RESUMEN -->
+  <div id="tab-resumen" class="tab-panel active">
+    <div class="section-title">estado global del período</div>
+    <div class="grid4">
+      <div class="big-stat"><div class="big-stat-num" id="gs-verde">—</div><div class="big-stat-label">&#128994; En meta</div></div>
+      <div class="big-stat"><div class="big-stat-num" id="gs-amarillo" style="color:var(--yellow)">—</div><div class="big-stat-label">&#128993; En alerta</div></div>
+      <div class="big-stat"><div class="big-stat-num" id="gs-rojo" style="color:var(--red)">—</div><div class="big-stat-label">&#128308; Fuera de meta</div></div>
+      <div class="big-stat"><div class="big-stat-num" id="gs-gris" style="color:#9E9E9E">—</div><div class="big-stat-label">&#9898; Sin datos</div></div>
+    </div>
+    <div class="section-title">alertas activas</div>
+    <div id="alertas-detalle"><div class="alert-box a-info">Cargá datos para ver alertas.</div></div>
+    <div class="section-title">tendencia mensual — índice de gestión</div>
+    <div class="chart-box">
+      <div class="chart-title">Evolución del índice de gestión (0–100)</div>
+      <div class="chart-sub">Índice real &nbsp;—&nbsp; Meta (70)</div>
+      <div class="chart-wrap tall"><canvas id="chart-indice"></canvas></div>
+    </div>
+  </div>
+
+  <!-- OBJETIVOS -->
+  <div id="tab-objetivos" class="tab-panel">
+    <div class="section-title">objetivos de calidad 2025 — estado en tiempo real</div>
+    <div id="obj-table-wrap"><div class="alert-box a-info">Sin objetivos configurados. Agregalos en ⚙ Configuración.</div></div>
+  </div>
+
+  <!-- CALIDAD -->
+  <div id="tab-calidad" class="tab-panel">
+    <div class="section-title">indicadores de calidad</div>
+    <div class="grid4" id="kpi-calidad"></div>
+    <div class="section-title">historial mensual</div>
+    <div class="chart-box"><div class="chart-title">Reclamos &amp; Kg retenidos (%)</div><div class="chart-wrap"><canvas id="chart-calidad"></canvas></div></div>
+    <div class="chart-box"><div class="chart-title">Eficacia acciones correctivas (%)</div><div class="chart-wrap"><canvas id="chart-acciones"></canvas></div></div>
+  </div>
+
+  <!-- PRODUCCIÓN -->
+  <div id="tab-produccion" class="tab-panel">
+    <div class="section-title">desempeño productivo</div>
+    <div class="grid3" id="kpi-produccion"></div>
+    <div class="section-title">historial mensual por línea</div>
+    <div class="chart-box">
+      <div class="chart-title">Desempeño de producción por línea (%)</div>
+      <div class="chart-sub">Meta: ≥90% en todas las líneas</div>
+      <div class="chart-wrap tall"><canvas id="chart-produccion"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CLIENTES -->
+  <div id="tab-clientes" class="tab-panel">
+    <div class="section-title">satisfacción de clientes</div>
+    <div class="grid3" id="kpi-clientes"></div>
+    <div class="section-title">evolución del NPS</div>
+    <div class="chart-box">
+      <div class="chart-title">NPS Final — evolución anual</div>
+      <div class="chart-sub">Net Promoter Score = % Promotores − % Detractores &bull; Meta: ≥80</div>
+      <div class="chart-wrap"><canvas id="chart-nps"></canvas></div>
+    </div>
+  </div>
+
+  <!-- RRHH -->
+  <div id="tab-rrhh" class="tab-panel">
+    <div class="section-title">recursos humanos y formación</div>
+    <div class="grid4" id="kpi-rrhh"></div>
+    <div class="section-title">cumplimiento del plan de formación</div>
+    <div class="chart-box">
+      <div class="chart-title">Plan de formación — cumplimiento anual (%)</div>
+      <div class="chart-wrap"><canvas id="chart-formacion"></canvas></div>
+    </div>
+  </div>
+
+  <!-- PROVEEDORES -->
+  <div id="tab-proveedores" class="tab-panel">
+    <div class="section-title">proveedores y mantenimiento</div>
+    <div class="grid4" id="kpi-proveedores"></div>
+    <div class="section-title">mantenimiento</div>
+    <div class="grid2" id="kpi-mant"></div>
+    <div class="section-title">mantenimiento — historial mensual</div>
+    <div class="chart-box">
+      <div class="chart-title">Cumplimiento plan de mantenimiento (%)</div>
+      <div class="chart-sub">Meta: ≥90%</div>
+      <div class="chart-wrap"><canvas id="chart-mant"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CARGAR -->
+  <div id="tab-cargar" class="tab-panel">
+    <div class="section-title">registro mensual de indicadores</div>
+    <div class="alert-box a-info" style="margin-bottom:1rem">
+      Seleccioná el mes y año, completá los valores reales y presioná <strong>Guardar período</strong>. Los datos se sincronizan automáticamente con Google Sheets.
+    </div>
+    <div style="display:flex;gap:1rem;align-items:flex-end;margin-bottom:.8rem;flex-wrap:wrap">
+      <div class="form-group">
+        <label>Mes:</label>
+        <select id="sel-mes" style="padding:.4rem .6rem;border:1px solid #ccc;border-radius:4px;font-size:13px">
+          <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+          <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+          <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+          <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Año:</label>
+        <input type="number" id="sel-anio" value="2025" min="2024" max="2030" style="padding:.4rem .6rem;border:1px solid #ccc;border-radius:4px;font-size:13px;width:80px">
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="cargarPeriodo()">Cargar guardado</button>
+    </div>
+    <div id="form-cargar"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="guardarPeriodo()">&#10003; Guardar período</button>
+      <button class="btn btn-outline" onclick="exportarCSV()">&#8595; Exportar CSV</button>
+      <button class="btn btn-danger btn-sm" onclick="borrarPeriodo()">Borrar período</button>
+    </div>
+    <div id="msg-cargar" style="margin-top:.6rem;font-size:12px;color:var(--green)"></div>
+  </div>
+
+  <!-- CONFIG -->
+  <div id="tab-config" class="tab-panel">
+    <div class="section-title">configuración de indicadores — metas y etiquetas</div>
+    <div class="alert-box a-info" style="margin-bottom:1rem">
+      Editá las metas y etiquetas de cada indicador. Los cambios se guardan en este navegador y se aplican inmediatamente. Presioná <strong>Guardar configuración</strong> para confirmar.
+    </div>
+    <div id="config-table-wrap"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="guardarConfig()">&#10003; Guardar configuración</button>
+      <button class="btn btn-outline" onclick="resetConfig()">Restablecer defaults</button>
+    </div>
+    <div class="section-title" style="margin-top:1.5rem">agregar nuevo objetivo de calidad</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Objetivo</label><input type="text" id="obj-texto" placeholder="Ej: Reducir reclamos al 1%"></div>
+      <div class="form-group"><label>Responsable</label><input type="text" id="obj-resp" placeholder="Ej: Gerencia de Calidad"></div>
+      <div class="form-group"><label>Meta</label><input type="text" id="obj-meta" placeholder="Ej: &le;1%"></div>
+      <div class="form-group"><label>Plazo</label><input type="text" id="obj-plazo" placeholder="Ej: Dic 2025"></div>
+      <div class="form-group"><label>Indicador vinculado</label>
+        <select id="obj-kpi"><option value="">-- seleccionar --</option></select>
+      </div>
+    </div>
+    <button class="btn btn-gold btn-sm" onclick="agregarObjetivo()">+ Agregar</button>
+    <div class="section-title" style="margin-top:1.2rem">objetivos actuales</div>
+    <div id="obj-list-wrap"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary btn-sm" onclick="guardarObjetivos()">&#10003; Guardar objetivos</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Aromitalia &bull; Dal 1942, Ingredienti di Qualità &bull; Tablero de Indicadores ISO 9001:2015 &bull; Cód: R-CA-016</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby8WlOtBUVexcjej97bDbiZTPTI_d8mkTVR1PMYCU6ZfECxLTvsCsdH8yAb0hTJgQphZg/exec";
+const MESES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MESES_FULL = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+const INDICADORES_DEFAULT = [
+  {id:'c1',proceso:'Calidad',label:'% Reclamos clientes',meta:2,dir:'↓',unit:'%',fmt:'dec1'},
+  {id:'c2',proceso:'Calidad',label:'% Kg retenidos / producidos',meta:1,dir:'↓',unit:'%',fmt:'dec1'},
+  {id:'c3',proceso:'Calidad',label:'Eficacia acc. correctivas',meta:80,dir:'↑',unit:'%',fmt:'ent'},
+  {id:'c4',proceso:'Calidad',label:'NC internas detectadas',meta:5,dir:'↓',unit:'NC',fmt:'ent'},
+  {id:'p1',proceso:'Producción',label:'Desempeño polvos (%)',meta:90,dir:'↑',unit:'%',fmt:'dec1'},
+  {id:'p2',proceso:'Producción',label:'Desempeño pastas (%)',meta:90,dir:'↑',unit:'%',fmt:'dec1'},
+  {id:'p3',proceso:'Producción',label:'Desempeño oleosas (%)',meta:90,dir:'↑',unit:'%',fmt:'dec1'},
+  {id:'cl1',proceso:'Clientes',label:'NPS Final',meta:80,dir:'↑',unit:'pts',fmt:'ent'},
+  {id:'cl2',proceso:'Clientes',label:'% Respuesta encuesta',meta:30,dir:'↑',unit:'%',fmt:'ent'},
+  {id:'cl3',proceso:'Clientes',label:'Entregas en término (%)',meta:95,dir:'↑',unit:'%',fmt:'dec1'},
+  {id:'r1',proceso:'RRHH',label:'Cumplimiento formación (%)',meta:85,dir:'↑',unit:'%',fmt:'ent'},
+  {id:'r2',proceso:'RRHH',label:'Ausentismo (%)',meta:3,dir:'↓',unit:'%',fmt:'dec1'},
+  {id:'r3',proceso:'RRHH',label:'Rotación personal (%)',meta:10,dir:'↓',unit:'%',fmt:'dec1'},
+  {id:'r4',proceso:'RRHH',label:'Horas capacitación / persona',meta:12,dir:'↑',unit:'hs',fmt:'dec1'},
+  {id:'pv1',proceso:'Proveedores',label:'Proveedores evaluados (%)',meta:100,dir:'↑',unit:'%',fmt:'ent'},
+  {id:'pv2',proceso:'Proveedores',label:'% Insumos conformes',meta:95,dir:'↑',unit:'%',fmt:'dec1'},
+  {id:'pv3',proceso:'Proveedores',label:'Puntualidad entregas prov.',meta:90,dir:'↑',unit:'%',fmt:'dec1'},
+  {id:'pv4',proceso:'Proveedores',label:'Reclamos a proveedores',meta:2,dir:'↓',unit:'NC',fmt:'ent'},
+  {id:'m1',proceso:'Mantenimiento',label:'Cumplim. plan mant. (%)',meta:90,dir:'↑',unit:'%',fmt:'ent'},
+  {id:'m2',proceso:'Mantenimiento',label:'Tiempo medio reparación',meta:4,dir:'↓',unit:'hs',fmt:'dec1'},
+];
+
+let CONFIG = JSON.parse(localStorage.getItem('aroma_config') || 'null') || JSON.parse(JSON.stringify(INDICADORES_DEFAULT));
+let OBJETIVOS = JSON.parse(localStorage.getItem('aroma_objetivos') || '[]');
+let DATOS = {};
+
+document.getElementById('sel-anio').value = new Date().getFullYear();
+document.getElementById('sel-mes').value = new Date().getMonth()+1;
+
+// ── SYNC ──
+function setSyncStatus(state,text){
+  const el=document.getElementById('sync-status');
+  el.className='sync-badge '+state; el.textContent=text;
+}
+
+async function cargarDatosSheets(){
+  setSyncStatus('loading','⏳ Sincronizando...');
+  try {
+    const url = SCRIPT_URL+'?action=getAll&t='+Date.now();
+    const resp = await fetch(url);
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const raw = await resp.json();
+    DATOS={};
+    if(Array.isArray(raw)){
+      raw.forEach(row=>{
+        if(row[0]&&row[0]!=='key'){
+          try{DATOS[row[0]]=JSON.parse(row[1]);}catch(e){}
+        }
+      });
+    }
+    localStorage.setItem('aroma_datos_backup',JSON.stringify(DATOS));
+    setSyncStatus('ok','✓ Sincronizado');
+    document.getElementById('last-sync').textContent='Última sync: '+new Date().toLocaleTimeString('es-AR');
+    renderTodo();
+  } catch(e){
+    setSyncStatus('error','✗ Sin conexión');
+    const local=localStorage.getItem('aroma_datos_backup');
+    if(local){DATOS=JSON.parse(local);}
+    renderTodo();
+  }
+}
+
+async function guardarEnSheets(key,value){
+  setSyncStatus('loading','⏳ Guardando...');
+  DATOS[key]=value;
+  localStorage.setItem('aroma_datos_backup',JSON.stringify(DATOS));
+  try {
+    const resp = await fetch(SCRIPT_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'set',key,value})
+    });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    setSyncStatus('ok','✓ Guardado en Sheets');
+    document.getElementById('last-sync').textContent='Guardado: '+new Date().toLocaleTimeString('es-AR');
+  } catch(e){
+    setSyncStatus('error','⚠ Guardado solo local');
+  }
+}
+
+async function borrarDeSheets(key){
+  delete DATOS[key];
+  localStorage.setItem('aroma_datos_backup',JSON.stringify(DATOS));
+  try{
+    await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'delete',key})});
+  }catch(e){}
+  setSyncStatus('ok','✓ Borrado');
+  renderTodo();
+}
+
+// ── HELPERS ──
+function fmt(val,format){
+  if(val===null||val===undefined||val==='') return '—';
+  const n=parseFloat(val); if(isNaN(n)) return '—';
+  if(format==='dec1') return n.toFixed(1);
+  if(format==='dec2') return n.toFixed(2);
+  return Math.round(n).toString();
+}
+
+function semaforo(val,meta,dir){
+  if(val===null||val===undefined||val==='') return 'grey';
+  const n=parseFloat(val),m=parseFloat(meta);
+  if(isNaN(n)||isNaN(m)) return 'grey';
+  const ratio=dir==='↑'?n/m:m/n;
+  if(ratio>=1) return 'green';
+  if(ratio>=0.85) return 'yellow';
+  return 'red';
+}
+
+function getPeriodoKey(m,y){return y+'-'+String(m).padStart(2,'0');}
+
+function getUltimosDatos(n=12){
+  return Object.keys(DATOS).filter(k=>/^\d{4}-\d{2}$/.test(k)).sort().slice(-n).map(k=>({key:k,data:DATOS[k]}));
+}
+
+function getUltimoValor(id){
+  const hist=getUltimosDatos(12);
+  for(let i=hist.length-1;i>=0;i--){
+    const v=hist[i].data&&hist[i].data[id];
+    if(v!==undefined&&v!=='') return parseFloat(v);
+  }
+  return null;
+}
+
+// ── KPI CARDS ──
+function renderKPIs(proceso,containerId){
+  const cont=document.getElementById(containerId); if(!cont) return;
+  const inds=CONFIG.filter(i=>i.proceso===proceso);
+  cont.innerHTML=inds.map(ind=>{
+    const val=getUltimoValor(ind.id);
+    const color=semaforo(val,ind.meta,ind.dir);
+    const valStr=val!==null?fmt(val,ind.fmt):'—';
+    return `<div class="kpi ${color}">
+      <div class="kpi-label"><span class="kpi-semaphore sem-${color}"></span>${ind.label}</div>
+      <div class="kpi-value">${valStr}<span class="kpi-unit">${ind.unit}</span></div>
+      <div class="kpi-meta">Meta ${ind.dir}: ${ind.meta}${ind.unit}</div></div>`;
+  }).join('');
+}
+
+// ── RESUMEN ──
+function renderResumen(){
+  let v=0,a=0,r=0,g=0; const alertas=[];
+  CONFIG.forEach(ind=>{
+    const val=getUltimoValor(ind.id); const color=semaforo(val,ind.meta,ind.dir);
+    if(color==='green') v++; else if(color==='yellow'){a++;alertas.push({ind,val,color:'yellow'});}
+    else if(color==='red'){r++;alertas.push({ind,val,color:'red'});} else g++;
+  });
+  document.getElementById('gs-verde').textContent=v;
+  document.getElementById('gs-amarillo').textContent=a;
+  document.getElementById('gs-rojo').textContent=r;
+  document.getElementById('gs-gris').textContent=g;
+  const ad=document.getElementById('alertas-detalle');
+  ad.innerHTML=alertas.length===0
+    ?'<div class="alert-box a-ok">✓ Todos los indicadores con datos están dentro de meta.</div>'
+    :alertas.map(({ind,val,color})=>`<div class="alert-box ${color==='red'?'a-danger':'a-warn'}">
+      <strong>${ind.proceso} — ${ind.label}:</strong>&nbsp; Valor actual: <strong>${val!==null?fmt(val,ind.fmt):'sin datos'} ${ind.unit}</strong> — Meta ${ind.dir} ${ind.meta}${ind.unit}</div>`).join('');
+
+  const hist=getUltimosDatos(12);
+  const labels=hist.map(h=>{const[y,m]=h.key.split('-');return MESES[parseInt(m)]+' '+y.slice(2);});
+  const indices=hist.map(({data})=>{
+    if(!data) return null;
+    let tot=0,cnt=0;
+    CONFIG.forEach(ind=>{
+      const v=data[ind.id];
+      if(v!==undefined&&v!==''){const n=parseFloat(v),m=parseFloat(ind.meta);
+        if(!isNaN(n)&&!isNaN(m)){const ratio=ind.dir==='↑'?n/m:m/n;tot+=Math.min(ratio,1.3)*100/1.3;cnt++;}}
+    });
+    return cnt>0?Math.round(tot/cnt):null;
+  });
+  renderLineChart('chart-indice',labels,[
+    {label:'Índice real',data:indices,color:'#1B2A4A'},
+    {label:'Meta (70)',data:labels.map(()=>70),color:'#C9A84C',dash:true}
+  ]);
+}
+
+// ── OBJETIVOS ──
+function renderObjetivos(){
+  const wrap=document.getElementById('obj-table-wrap');
+  if(!OBJETIVOS.length){wrap.innerHTML='<div class="alert-box a-info">Sin objetivos configurados. Agregalos en ⚙ Configuración.</div>';return;}
+  const rows=OBJETIVOS.map(obj=>{
+    const ind=CONFIG.find(i=>i.id===obj.kpi);
+    const val=ind?getUltimoValor(obj.kpi):null;
+    const color=ind?semaforo(val,ind.meta,ind.dir):'grey';
+    const bClass={green:'badge-green',yellow:'badge-yellow',red:'badge-red',grey:'badge-grey'}[color];
+    const estado={green:'✓ En meta',yellow:'⚠ En alerta',red:'✗ Fuera de meta',grey:'— Sin datos'}[color];
+    return `<tr><td>${obj.texto}</td><td>${obj.responsable}</td><td>${obj.meta}</td><td>${obj.plazo}</td>
+      <td>${ind?ind.label:'—'}</td><td>${val!==null?fmt(val,ind?ind.fmt:'ent'):'—'}${ind?' '+ind.unit:''}</td>
+      <td><span class="badge ${bClass}">${estado}</span></td></tr>`;
+  }).join('');
+  wrap.innerHTML=`<table class="data-table"><thead><tr><th>Objetivo</th><th>Responsable</th><th>Meta</th><th>Plazo</th><th>Indicador vinculado</th><th>Valor actual</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ── CHARTS ──
+const chartInstances={};
+function renderLineChart(id,labels,datasets){
+  if(chartInstances[id])chartInstances[id].destroy();
+  const ctx=document.getElementById(id); if(!ctx) return;
+  chartInstances[id]=new Chart(ctx,{type:'line',data:{labels,datasets:datasets.map(ds=>({
+    label:ds.label,data:ds.data,borderColor:ds.color,backgroundColor:ds.color+'22',
+    pointBackgroundColor:ds.color,borderWidth:ds.dash?2:2.5,borderDash:ds.dash?[5,5]:[],
+    tension:.3,fill:!ds.dash,pointRadius:3,spanGaps:true}))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:11},boxWidth:14}},tooltip:{mode:'index'}},
+      scales:{y:{beginAtZero:false,ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
+}
+
+function renderBarChart(id,labels,datasets){
+  if(chartInstances[id])chartInstances[id].destroy();
+  const ctx=document.getElementById(id); if(!ctx) return;
+  chartInstances[id]=new Chart(ctx,{type:'bar',data:{labels,datasets:datasets.map(ds=>({
+    label:ds.label,data:ds.data,backgroundColor:ds.color+'BB',borderColor:ds.color,borderWidth:1}))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:11},boxWidth:14}}},
+      scales:{y:{beginAtZero:false,ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
+}
+
+function hm(h){const[y,m]=h.key.split('-');return MESES[parseInt(m)];}
+
+function renderChartsCalidad(){
+  const h=getUltimosDatos(12);const l=h.map(hm);
+  renderLineChart('chart-calidad',l,[
+    {label:'% Reclamos',data:h.map(x=>x.data&&x.data.c1!==''?parseFloat(x.data.c1):null),color:'#C62828'},
+    {label:'% Kg retenidos',data:h.map(x=>x.data&&x.data.c2!==''?parseFloat(x.data.c2):null),color:'#F9A825'}]);
+  renderLineChart('chart-acciones',l,[
+    {label:'Eficacia (%)',data:h.map(x=>x.data&&x.data.c3!==''?parseFloat(x.data.c3):null),color:'#2E7D32'},
+    {label:'Meta (80)',data:l.map(()=>80),color:'#C9A84C',dash:true}]);
+}
+function renderChartsProduccion(){
+  const h=getUltimosDatos(12);const l=h.map(hm);
+  renderBarChart('chart-produccion',l,[
+    {label:'Polvos',data:h.map(x=>x.data&&x.data.p1!==''?parseFloat(x.data.p1):null),color:'#1B2A4A'},
+    {label:'Pastas',data:h.map(x=>x.data&&x.data.p2!==''?parseFloat(x.data.p2):null),color:'#C9A84C'},
+    {label:'Oleosas',data:h.map(x=>x.data&&x.data.p3!==''?parseFloat(x.data.p3):null),color:'#5C6BC0'},
+    {label:'Meta (90)',data:l.map(()=>90),color:'#2E7D32'}]);
+}
+function renderChartsClientes(){
+  const h=getUltimosDatos(12);const l=h.map(hm);
+  renderLineChart('chart-nps',l,[
+    {label:'NPS Final',data:h.map(x=>x.data&&x.data.cl1!==''?parseFloat(x.data.cl1):null),color:'#1B2A4A'},
+    {label:'Meta (80)',data:l.map(()=>80),color:'#C9A84C',dash:true}]);
+}
+function renderChartsRRHH(){
+  const h=getUltimosDatos(12);const l=h.map(hm);
+  renderLineChart('chart-formacion',l,[
+    {label:'% Cumplimiento',data:h.map(x=>x.data&&x.data.r1!==''?parseFloat(x.data.r1):null),color:'#1B2A4A'},
+    {label:'Meta (85)',data:l.map(()=>85),color:'#C9A84C',dash:true}]);
+}
+function renderChartsMant(){
+  const h=getUltimosDatos(12);const l=h.map(hm);
+  renderLineChart('chart-mant',l,[
+    {label:'Cumplimiento (%)',data:h.map(x=>x.data&&x.data.m1!==''?parseFloat(x.data.m1):null),color:'#1B2A4A'},
+    {label:'Meta (90)',data:l.map(()=>90),color:'#C9A84C',dash:true}]);
+}
+
+// ── CARGAR TAB ──
+function buildFormCargar(datos){
+  const procesos=[...new Set(CONFIG.map(i=>i.proceso))];
+  document.getElementById('form-cargar').innerHTML=procesos.map(proc=>`
+    <div class="section-title">${proc}</div>
+    <table class="data-table" style="margin-bottom:.6rem">
+      <thead><tr><th>Indicador</th><th>Valor real</th><th>Meta</th><th>Unidad</th></tr></thead>
+      <tbody>${CONFIG.filter(i=>i.proceso===proc).map(ind=>`
+        <tr><td>${ind.label}</td>
+        <td><input type="number" step="0.01" id="inp-${ind.id}" value="${datos&&datos[ind.id]!==undefined?datos[ind.id]:''}"
+          style="width:90px;padding:.3rem;border:1px solid #ccc;border-radius:3px;font-size:13px"></td>
+        <td style="color:#888">${ind.dir} ${ind.meta}</td>
+        <td style="color:#888">${ind.unit}</td></tr>`).join('')}
+      </tbody></table>`).join('');
+}
+
+function cargarPeriodo(){
+  const m=parseInt(document.getElementById('sel-mes').value);
+  const y=parseInt(document.getElementById('sel-anio').value);
+  const key=getPeriodoKey(m,y);
+  buildFormCargar(DATOS[key]||null);
+  document.getElementById('msg-cargar').textContent=DATOS[key]?`Datos del período ${MESES_FULL[m]} ${y} cargados.`:`Sin datos para ${MESES_FULL[m]} ${y}.`;
+}
+
+async function guardarPeriodo(){
+  const m=parseInt(document.getElementById('sel-mes').value);
+  const y=parseInt(document.getElementById('sel-anio').value);
+  const key=getPeriodoKey(m,y);
+  const valores={};
+  CONFIG.forEach(ind=>{const inp=document.getElementById('inp-'+ind.id);valores[ind.id]=inp?inp.value:'';});
+  await guardarEnSheets(key,valores);
+  document.getElementById('msg-cargar').textContent=`✓ Período ${MESES_FULL[m]} ${y} guardado correctamente.`;
+  renderTodo();
+}
+
+async function borrarPeriodo(){
+  const m=parseInt(document.getElementById('sel-mes').value);
+  const y=parseInt(document.getElementById('sel-anio').value);
+  if(!confirm(`¿Borrar todos los datos de ${MESES_FULL[m]} ${y}?`)) return;
+  await borrarDeSheets(getPeriodoKey(m,y));
+  buildFormCargar(null);
+  document.getElementById('msg-cargar').textContent=`Período ${MESES_FULL[m]} ${y} eliminado.`;
+}
+
+function exportarCSV(){
+  const hist=getUltimosDatos(24);
+  const headers=['Período',...CONFIG.map(i=>i.label)];
+  const rows=hist.map(({key,data})=>[key,...CONFIG.map(i=>data&&data[i.id]!==undefined?data[i.id]:'')]);
+  const csv=[headers,...rows].map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='aromitalia_indicadores.csv'; a.click();
+}
+
+// ── CONFIG TAB ──
+function renderConfigTab(){
+  document.getElementById('config-table-wrap').innerHTML=`<table class="data-table">
+    <thead><tr><th>Proceso</th><th>Etiqueta del indicador</th><th>Meta</th><th>Dirección</th><th>Unidad</th><th>Formato</th></tr></thead>
+    <tbody>${CONFIG.map((ind,i)=>`<tr>
+      <td>${ind.proceso}</td>
+      <td><input type="text" value="${ind.label}" onchange="CONFIG[${i}].label=this.value" style="width:100%;padding:2px 4px;font-size:12px;border:1px solid #ddd;border-radius:3px"></td>
+      <td><input type="number" value="${ind.meta}" step="0.1" onchange="CONFIG[${i}].meta=parseFloat(this.value)" style="width:70px;padding:2px 4px;font-size:12px;border:1px solid #ddd;border-radius:3px"></td>
+      <td><select onchange="CONFIG[${i}].dir=this.value" style="font-size:12px;padding:2px;border:1px solid #ddd;border-radius:3px">
+        <option value="↑" ${ind.dir==='↑'?'selected':''}>↑ Subir</option>
+        <option value="↓" ${ind.dir==='↓'?'selected':''}>↓ Bajar</option></select></td>
+      <td><input type="text" value="${ind.unit}" onchange="CONFIG[${i}].unit=this.value" style="width:50px;padding:2px 4px;font-size:12px;border:1px solid #ddd;border-radius:3px"></td>
+      <td><select onchange="CONFIG[${i}].fmt=this.value" style="font-size:12px;padding:2px;border:1px solid #ddd;border-radius:3px">
+        <option value="ent" ${ind.fmt==='ent'?'selected':''}>Entero</option>
+        <option value="dec1" ${ind.fmt==='dec1'?'selected':''}>1 decimal</option>
+        <option value="dec2" ${ind.fmt==='dec2'?'selected':''}>2 decimales</option></select></td>
+    </tr>`).join('')}</tbody></table>`;
+  const sel=document.getElementById('obj-kpi');
+  sel.innerHTML='<option value="">-- seleccionar --</option>'+CONFIG.map(i=>`<option value="${i.id}">${i.proceso} — ${i.label}</option>`).join('');
+  renderObjList();
+}
+
+function renderObjList(){
+  const wrap=document.getElementById('obj-list-wrap');
+  if(!OBJETIVOS.length){wrap.innerHTML='<div class="alert-box a-info">Sin objetivos cargados.</div>';return;}
+  wrap.innerHTML=`<table class="data-table"><thead><tr><th>Objetivo</th><th>Responsable</th><th>Meta</th><th>Plazo</th><th>Indicador</th><th>Acción</th></tr></thead>
+    <tbody>${OBJETIVOS.map((obj,i)=>`<tr><td>${obj.texto}</td><td>${obj.responsable}</td><td>${obj.meta}</td><td>${obj.plazo}</td>
+      <td>${CONFIG.find(c=>c.id===obj.kpi)?.label||'—'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="eliminarObjetivo(${i})">✕</button></td></tr>`).join('')}</tbody></table>`;
+}
+
+function agregarObjetivo(){
+  const texto=document.getElementById('obj-texto').value.trim();
+  if(!texto){alert('Escribí el objetivo.');return;}
+  OBJETIVOS.push({
+    texto,responsable:document.getElementById('obj-resp').value.trim(),
+    meta:document.getElementById('obj-meta').value.trim(),
+    plazo:document.getElementById('obj-plazo').value.trim(),
+    kpi:document.getElementById('obj-kpi').value
+  });
+  ['obj-texto','obj-resp','obj-meta','obj-plazo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('obj-kpi').value='';
+  renderObjList();
+}
+
+function eliminarObjetivo(i){OBJETIVOS.splice(i,1);renderObjList();}
+
+function guardarConfig(){
+  localStorage.setItem('aroma_config',JSON.stringify(CONFIG));
+  alert('✓ Configuración guardada.');renderTodo();
+}
+
+function resetConfig(){
+  if(!confirm('¿Restablecer a valores por defecto?')) return;
+  CONFIG=JSON.parse(JSON.stringify(INDICADORES_DEFAULT));
+  localStorage.setItem('aroma_config',JSON.stringify(CONFIG));
+  renderConfigTab();renderTodo();
+}
+
+function guardarObjetivos(){
+  localStorage.setItem('aroma_objetivos',JSON.stringify(OBJETIVOS));
+  alert('✓ Objetivos guardados.');renderObjetivos();
+}
+
+// ── TABS ──
+const TABS=['resumen','objetivos','calidad','produccion','clientes','rrhh','proveedores','cargar','config'];
+function showTab(name){
+  TABS.forEach(t=>{document.getElementById('tab-'+t).classList.toggle('active',t===name);});
+  document.querySelectorAll('.tab').forEach((btn,i)=>btn.classList.toggle('active',TABS[i]===name));
+  if(name==='calidad')renderChartsCalidad();
+  if(name==='produccion')renderChartsProduccion();
+  if(name==='clientes')renderChartsClientes();
+  if(name==='rrhh')renderChartsRRHH();
+  if(name==='proveedores')renderChartsMant();
+  if(name==='cargar'){const m=parseInt(document.getElementById('sel-mes').value);const y=parseInt(document.getElementById('sel-anio').value);buildFormCargar(DATOS[getPeriodoKey(m,y)]||null);}
+  if(name==='config')renderConfigTab();
+}
+
+// ── RENDER TODO ──
+function renderTodo(){
+  renderResumen();renderObjetivos();
+  renderKPIs('Calidad','kpi-calidad');renderKPIs('Producción','kpi-produccion');
+  renderKPIs('Clientes','kpi-clientes');renderKPIs('RRHH','kpi-rrhh');
+  renderKPIs('Proveedores','kpi-proveedores');renderKPIs('Mantenimiento','kpi-mant');
+  renderChartsCalidad();renderChartsProduccion();renderChartsClientes();renderChartsRRHH();renderChartsMant();
+  renderConfigTab();
+  const m=parseInt(document.getElementById('sel-mes').value);
+  const y=parseInt(document.getElementById('sel-anio').value);
+  buildFormCargar(DATOS[getPeriodoKey(m,y)]||null);
+}
+
+// ── INIT ──
+cargarDatosSheets();
+</script>
+</body>
+</html>
