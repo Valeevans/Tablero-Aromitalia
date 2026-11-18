@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aromitalia · Recorridas de Planta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --navy:#1f2f53; --navy-2:#2c3f6b; --navy-soft:#e8ecf4;
+  --bg:#f6f6f3; --surface:#ffffff; --line:#e3e2dc; --line-2:#cfcdc5;
+  --ink:#16181d; --ink-2:#52514e; --ink-3:#86857f;
+  --ok:#0b7a3b; --ok-bg:#e5f4ea; --warn:#a46200; --warn-bg:#fdf1dc; --bad:#b42424; --bad-bg:#fbe6e4;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#6250d6; --s8:#e34948;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+header.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.top-in{max-width:1180px;margin:0 auto;padding:10px 18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.top-in img{height:34px;width:auto;display:block}
+.brand-sub{font-size:12px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;border-left:1px solid var(--line);padding-left:14px}
+nav.tabs{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+nav.tabs button{border:0;background:transparent;padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--ink-2);font-weight:500}
+nav.tabs button:hover{background:var(--navy-soft);color:var(--navy)}
+nav.tabs button.on{background:var(--navy);color:#fff}
+main{max-width:1180px;margin:0 auto;padding:20px 18px 80px}
+h1{font-size:22px;margin:0 0 4px;color:var(--navy);letter-spacing:-.01em}
+h2{font-size:16px;margin:0 0 12px;color:var(--navy)}
+h3{font-size:14px;margin:0 0 8px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.05em}
+.muted{color:var(--ink-3)} .small{font-size:13px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:16px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px;min-width:150px;flex:1}
+.field label{font-size:12px;font-weight:600;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
+input[type=text],input[type=date],input[type=month],input[type=number],select,textarea{border:1px solid var(--line-2);background:#fff;border-radius:8px;padding:9px 10px;width:100%}
+textarea{min-height:70px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--navy-2);outline-offset:0;border-color:var(--navy-2)}
+.btn{border:1px solid var(--line-2);background:#fff;border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--navy);color:var(--navy)}
+.btn.primary{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.primary:hover{background:var(--navy-2)}
+.btn.danger{color:var(--bad)} .btn.danger:hover{border-color:var(--bad)}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px}
+.banner{padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:14px}
+.banner.warn{background:var(--warn-bg);color:#6b4100}
+.banner.info{background:var(--navy-soft);color:var(--navy)}
+/* scoring */
+.cat{border:1px solid var(--line);border-radius:var(--r);margin-bottom:12px;background:#fff;overflow:hidden}
+.cat-h{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--navy-soft);font-weight:700;color:var(--navy)}
+.cat-h .pct{font-variant-numeric:tabular-nums;font-size:14px}
+.item{display:grid;grid-template-columns:1fr auto;gap:8px 14px;padding:10px 14px;border-top:1px solid var(--line);align-items:center}
+.item .lab{font-weight:500}
+.item .crit{font-size:12.5px;color:var(--ink-3);margin-top:2px}
+.seg{display:flex;gap:4px}
+.seg button{min-width:44px;height:40px;border:1px solid var(--line-2);background:#fff;border-radius:8px;cursor:pointer;font-weight:700;font-variant-numeric:tabular-nums}
+.seg button[data-v="0"].on{background:var(--bad);border-color:var(--bad);color:#fff}
+.seg button[data-v="3"].on{background:#d9822b;border-color:#d9822b;color:#fff}
+.seg button[data-v="6"].on{background:#c9a400;border-color:#c9a400;color:#fff}
+.seg button[data-v="9"].on{background:var(--ok);border-color:var(--ok);color:#fff}
+.seg button[data-v="ne"]{font-weight:500;font-size:12px;min-width:52px;color:var(--ink-3)}
+.seg button[data-v="ne"].on{background:var(--ink-3);color:#fff;border-color:var(--ink-3)}
+.add-dev{font-size:12px;border:0;background:none;color:var(--navy-2);cursor:pointer;padding:0;margin-top:4px;text-decoration:underline}
+@media (max-width:640px){.item{grid-template-columns:1fr}.seg button{flex:1}}
+/* allergen checklist */
+.al-row{display:grid;grid-template-columns:1fr auto;gap:8px 12px;padding:9px 14px;border-top:1px solid var(--line);align-items:center}
+.al-row .seg button{min-width:58px;height:34px;font-size:12px;font-weight:600}
+.al-row .seg button.on[data-a="C"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.al-row .seg button.on[data-a="NC"]{background:var(--bad);border-color:var(--bad);color:#fff}
+.al-row .seg button.on[data-a="NA"]{background:var(--ink-3);border-color:var(--ink-3);color:#fff}
+.al-row input{grid-column:1/-1;font-size:13px;padding:6px 8px}
+@media (max-width:640px){.al-row{grid-template-columns:1fr}}
+.dev-row{display:grid;grid-template-columns:170px 1fr auto;gap:8px;margin-bottom:8px}
+@media (max-width:640px){.dev-row{grid-template-columns:1fr}}
+.sticky-save{position:sticky;bottom:0;background:rgba(246,246,243,.96);backdrop-filter:blur(4px);border-top:1px solid var(--line);padding:12px 0;margin-top:10px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;z-index:5}
+.score-big{font-size:26px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+/* tables */
+.tbl-wrap{overflow-x:auto}
+table.t{border-collapse:collapse;width:100%;font-size:13.5px}
+table.t th,table.t td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.t th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);background:#fafaf8;white-space:nowrap}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.t tr.tot td{font-weight:700;border-top:2px solid var(--line-2);color:var(--navy)}
+td.low{background:var(--bad-bg);color:var(--bad);font-weight:600}
+td.mid{background:var(--warn-bg);color:#7a4a00}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:var(--navy-soft);color:var(--navy)}
+.pill.imp{background:#f0efe9;color:var(--ink-3)}
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.kpi .k{font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.kpi .v{font-size:28px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .d{font-size:13px;color:var(--ink-2)}
+.chart-box{position:relative;height:340px}
+.legend-note{font-size:12px;color:var(--ink-3);margin-top:8px}
+ul.list{margin:0;padding-left:18px} ul.list li{margin-bottom:6px}
+.empty{padding:30px;text-align:center;color:var(--ink-3)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+/* modal + toast */
+.modal-bg{position:fixed;inset:0;background:rgba(15,20,35,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal{background:#fff;border-radius:12px;max-width:440px;width:100%;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.modal p{margin:0 0 16px}
+.modal .acts{display:flex;gap:8px;justify-content:flex-end}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;z-index:60;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.toast.err{background:var(--bad)}
+.hidden{display:none!important}
+.pill.st-open{background:#fbe6e4;color:#b42424}.pill.st-an{background:#fdf1dc;color:#7a4a00}.pill.st-tr{background:#e8ecf4;color:#1f2f53}.pill.st-re{background:#b42424;color:#fff}.pill.st-ok{background:#e5f4ea;color:#0b7a3b}.pill.st-venc{background:#fff;color:#b42424;border:1px solid #b42424}
+.acc-row{display:grid;grid-template-columns:2fr 1fr 150px 130px auto;gap:8px;margin-bottom:8px}
+@media (max-width:760px){.acc-row{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <img src="data:image/jpeg;base64,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" alt="Aromitalia">
+  <div class="brand-sub">Recorridas de planta · R-P-CA-002.10<div id="sync" style="font-size:11px;text-transform:none;letter-spacing:0;margin-top:2px"></div></div>
+  <nav class="tabs" id="tabs">
+    <button data-v="nueva">Nueva recorrida</button>
+    <button data-v="historial">Recorridas</button>
+    <button data-v="desvios">Desvíos</button>
+    <button data-v="mensual">Reporte mensual</button>
+    <button data-v="anual">Reporte anual</button>
+    <button data-v="global">Global planta</button>
+  </nav>
+</div></header>
+<main id="app"><div class="empty">Cargando…</div></main>
+<div id="modal-root"></div>
+
+<script>
+"use strict";
+/* ============ CONFIGURACIÓN (planilla R-P-CA-002.10 Rev. 02) ============ */
+const LOGO = "data:image/jpeg;base64,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";
+const LOGO_RATIO = 515/119;
+const FORM = {codigo:"R-P-CA-002.10", revision:"02", fecha:"01/07/26"};
+const SECTORES = [
+  {id:"PASTAS", nombre:"Sala de Pastas y Cámara", al:"PASTAS"},
+  {id:"POLVO", nombre:"Sala de Polvo", al:"POLVOS"},
+  {id:"OLEOSAS", nombre:"Sala de Oleosas", al:"OLEOSAS"},
+  {id:"PREDEPOSITO", nombre:"Predepósito, Sala de Coloraroma y Cámara", al:"PREDEPOSITO"},
+  {id:"DEPOSITO", nombre:"Depósito / Empaque", al:"DEPOSITO"}
+];
+const SEC_COLOR = {PASTAS:"#2a78d6",POLVO:"#eb6834",OLEOSAS:"#1baf7a",PREDEPOSITO:"#eda100",DEPOSITO:"#e87ba4"};
+const TURNOS = ["TM","TT","TN"];
+const RESPONSABLES = ["YL","FG","EF"];
+const CATS = [
+ {n:1,nombre:"Orden y limpieza",items:[
+  ["1.a","Orden general del sector","Estado general de orden y ubicación de elementos; no puede haber ningún elemento que contenga alimento en contacto directo con el piso."],
+  ["1.b","Registro cumplimiento de POES","POES del sector realizados en tiempo y forma y registrados."],
+  ["1.c","Limpieza de herramientas y equipos","Estado de los elementos y correcta limpieza de los mismos."],
+  ["1.d","Limpieza sala","Limpieza del suelo, paredes, ventanas, etc."]]},
+ {n:2,nombre:"Higiene personal",items:[
+  ["2.a","Uniforme en buenas condiciones","Personal con el uniforme correspondiente al día de la semana y en estado óptimo (limpio, completo)."],
+  ["2.b","Uso de elementos de protección","Uso y condiciones de cofia, barbijo, barbero, mangas, guantes, calzado de seguridad, protector auditivo (si requiere)."],
+  ["2.c","Comportamiento del personal","Cumplimiento de normas de comportamiento general conforme a BPM (barba, joyas)."]]},
+ {n:3,nombre:"Capacitación del personal",items:[
+  ["3.a","Aplicación de conocimientos adquiridos","Aplicación de conocimientos brindados en las actividades de capacitación."],
+  ["3.b","Compromiso con la calidad","Nivel de conocimiento de los procedimientos y su aplicación en las tareas. Conocimiento de últimos reclamos y salidas no conformes."]]},
+ {n:4,nombre:"Estandarización",items:[
+  ["4.a","Cumplimiento de procedimientos establecidos","Cumplimiento de procedimientos y políticas del sector. Ausencia de objetos extraños susceptibles a contaminar."],
+  ["4.b","Cumplimiento trazabilidad","Trazabilidad de la producción en curso."],
+  ["4.c","Uso de lotes vigentes","Vigencia de los lotes en uso."]]},
+ {n:5,nombre:"Mantenimiento de equipos",items:[
+  ["5.a","Correcto uso de equipos","Equipos usados correctamente."],
+  ["5.b","Comunicación a mantenimiento ante un desperfecto","Si hay equipos fuera de uso, verificar que se haya comunicado a mantenimiento y que el equipo esté identificado."],
+  ["5.c","Ausencia de arreglos provisorios","Ausencia de arreglos provisorios que pongan en peligro a las personas, los equipos o la inocuidad del producto."]]},
+ {n:6,nombre:"Documentación",items:[
+  ["6.a","Registros completos en tiempo y forma","Llenado correcto de los registros, sin enmiendas ni tachaduras (si las hay, aclaradas)."],
+  ["6.b","Registros disponibles para su utilización","Registros disponibles y vigentes."]]},
+ {n:7,nombre:"Manejo integrado de plagas",items:[
+  ["7.a","Estado de estaciones de monitoreo","Estaciones sin roturas, suciedad u obstrucciones; óptimas para su uso."],
+  ["7.b","Presencia de insectos","Presencia de insectos y/o rastros de estos."],
+  ["7.c","Puertas y portones cerrados","Puertas, portones y cortinas cerrados correctamente."]]},
+ {n:8,nombre:"Gestión de alérgenos",items:[
+  ["8.a","Cumplimiento de las medidas de control del sector","Verificar que se cumpla lo estipulado para el sector (checklist de alérgenos)."],
+  ["8.b","Conocimiento del personal","Preguntar al operador sobre las medidas de alérgenos en la sala."]]}
+];
+const ITEMS = CATS.flatMap(c=>c.items.map(i=>({cod:i[0],nombre:i[1],crit:i[2],cat:c.n})));
+const ITEM = Object.fromEntries(ITEMS.map(i=>[i.cod,i]));
+const CAT_COLORS = ["#2a78d6","#eb6834","#1baf7a","#eda100","#e87ba4","#008300","#6250d6","#e34948"];
+const ALERGENOS = {
+ DEPOSITO:["Todos los pallets con materias primas alergénicas están identificados con etiqueta naranja vigente.",
+  "La R-P-CA-013.2 – Lista Positiva de Proveedores Aprobados está disponible en el sector y actualizada.",
+  "Se cumple la política de almacenamiento: cada alérgeno se almacena únicamente sobre el mismo alérgeno.",
+  "No se evidencian roturas de envases ni derrames en el área.",
+  "El operador demuestra conocimiento del procedimiento aplicable ante roturas o derrames."],
+ PREDEPOSITO:["Las materias primas destinadas a premezclas están en envase cerrado (empaque original o bolsa cristal) y correctamente identificadas.",
+  "Se utiliza la pala designada para el pesaje de materias primas alergénicas.",
+  "Las palas se encuentran limpias y almacenadas en la ubicación asignada.",
+  "El operador dispone de alcohol al 70% para la limpieza de palas, balanzas y mesadas.",
+  "Las materias primas para premezclas se almacenan en bin plástico o estantería asignada, conforme a P-PR-005.",
+  "Las materias primas en cajas presentan envase primario cerrado, registro de peso remanente y correcta ubicación.",
+  "Se utilizan exclusivamente las materias primas indicadas en la OP, respetando cantidades y orden de adición.",
+  "Cada pallet de precarga está identificado con rótulo R-P-PR-005.1 y registra el contenido de alérgenos.",
+  "Los alérgenos declarados en el pallet de precarga coinciden con los especificados en la OP.",
+  "Se utilizan únicamente los lotes consignados en el vale de consumo (o hay autorización formal)."],
+ PASTAS:["Los envases etiquetados se mantienen cubiertos con bolsa plástica limpia o con tapa hasta su uso.",
+  "La etiqueta del envase corresponde a la referencia en producción.",
+  "No se observan envases etiquetados de producciones anteriores.",
+  "Las materias primas alergénicas están identificadas con sticker naranja visible.",
+  "Las materias primas alergénicas se almacenan en la ubicación definida según I-P-CA-013.3.",
+  "Los contenedores de materias primas alergénicas permanecen cerrados cuando no están en uso.",
+  "Los operadores demuestran conocimiento del procedimiento ante roturas o derrames.",
+  "En premezcla y elaboración se utilizan exclusivamente los ingredientes indicados en la OP.",
+  "Se respetan las cantidades y el orden de adición establecidos en la OP.",
+  "Se utiliza la pala asignada por alérgeno y por línea. No se intercambian palas entre líneas.",
+  "Las palas se encuentran limpias y en su ubicación asignada.",
+  "Los operadores disponen de alcohol al 70% para limpieza de palas, balanzas y mesadas.",
+  "No se utilizan utensilios ni equipos de los sectores de POLVOS u OLEOSAS.",
+  "La máquina VALMAR permanece cubierta cuando no está en operación.",
+  "Se realiza la limpieza de cada línea al finalizar el turno y está registrada.",
+  "Se ejecuta la limpieza conforme a POES – Sala de Pastas 1 (POES-CA-001)."],
+ POLVOS:["Los envases etiquetados se mantienen cubiertos con bolsa plástica limpia o con tapa hasta su uso.",
+  "La etiqueta corresponde a la referencia en producción.",
+  "No se observan envases etiquetados de producciones anteriores.",
+  "Los operadores demuestran conocimiento del procedimiento ante roturas o derrames.",
+  "Se utilizan exclusivamente los materiales incluidos en las precargas y coinciden con la OP.",
+  "Se respetan cantidades y orden de adición establecidos en la OP.",
+  "Se utilizan palas asignadas según el perfil del producto (con alérgenos / sin alérgenos).",
+  "Las palas se encuentran limpias y almacenadas en su ubicación asignada.",
+  "Los operadores disponen de alcohol al 70% para limpieza de utensilios y superficies.",
+  "No se utilizan utensilios ni equipos de los sectores de PASTAS u OLEOSAS.",
+  "La limpieza se realiza conforme a POES Sala de Polvos (POES-CA-005) y POES vigentes del sector."],
+ OLEOSAS:["Los envases etiquetados se mantienen cubiertos con bolsa plástica limpia o con tapa hasta su uso.",
+  "La etiqueta corresponde a la referencia en producción.",
+  "No se observan envases etiquetados de producciones anteriores.",
+  "Los operadores demuestran conocimiento del procedimiento ante roturas o derrames.",
+  "Se utilizan exclusivamente los materiales incluidos en las precargas y coinciden con la OP.",
+  "Se respetan cantidades y orden de adición establecidos en la OP.",
+  "Los operadores disponen de alcohol al 70% para limpieza de utensilios y superficies.",
+  "No se utilizan utensilios ni equipos de los sectores de PASTAS o POLVOS.",
+  "La limpieza se realiza conforme al P-PR-004.4 – Limpieza máquina MEMAK."]
+};
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const MES3 = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"];
+const PUNTAJE_TXT = "Puntaje: 0 = no cumple · 3 = cumple parcialmente · 6 = cumple parcialmente pero hay un plan para dar cumplimiento · 9 = cumple satisfactoriamente";
+
+/* ============ ESTADO ============ */
+const S = { db:null, dl:null, canWrite:null, recs:[], trat:{}, dEdit:null, tDraft:null, loaded:false, loadErr:null, stale:false,
+  view:"nueva", draft:null, editingId:null,
+  f:{ sector:"PASTAS", mes:null, anio:null, hSector:"", hMes:"" , gMes:null } };
+const today = ()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
+S.f.d = {anio:+today().slice(0,4), mes:"", sector:"", cat:"", estado:"", q:""}; S.f.mes = today().slice(0,7); S.f.anio = +today().slice(0,4); S.f.gMes = today().slice(0,7);
+
+/* ============ UTILIDADES ============ */
+const $ = (s,el=document)=>el.querySelector(s);
+const esc = s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pct = v=> v==null||isNaN(v) ? "—" : (Math.round(v*1000)/10).toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})+" %";
+const fdate = iso=>{ if(!iso) return ""; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; };
+const secName = id=>(SECTORES.find(s=>s.id===id)||{nombre:id}).nombre;
+const cls = v=> v==null?"": v<0.75?"low": v<0.9?"mid":"";
+function toast(msg,err){const t=document.createElement("div");t.className="toast"+(err?" err":"");t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200);}
+function modal(html,actions){
+  const root=$("#modal-root");
+  root.innerHTML=`<div class="modal-bg"><div class="modal">${html}<div class="acts"></div></div></div>`;
+  const acts=$(".acts",root);
+  actions.forEach(a=>{const b=document.createElement("button");b.className="btn "+(a.cls||"");b.textContent=a.label;b.onclick=()=>{root.innerHTML="";a.fn&&a.fn();};acts.appendChild(b);});
+}
+
+/* ============ CÁLCULOS ============ */
+// Puntaje de una categoría en una recorrida: suma / (ítems evaluados × 9)
+function catScore(scores,n){ const v=ITEMS.filter(i=>i.cat===n).map(i=>scores[i.cod]).filter(x=>typeof x==="number"); return v.length? v.reduce((a,b)=>a+b,0)/(v.length*9):null; }
+function genScore(scores){ const v=ITEMS.map(i=>scores[i.cod]).filter(x=>typeof x==="number"); return v.length? v.reduce((a,b)=>a+b,0)/(v.length*9):null; }
+// Agregado de varias recorridas (igual que la columna TOTAL de la planilla: promedio por ítem y luego % de la categoría)
+function aggregate(recs){
+  if(!recs.length) return null;
+  const avg={};
+  ITEMS.forEach(i=>{const v=recs.map(r=>r.scores?.[i.cod]).filter(x=>typeof x==="number"); if(v.length) avg[i.cod]=v.reduce((a,b)=>a+b,0)/v.length;});
+  return {items:avg, cats:CATS.map(c=>catScore(avg,c.n)), gen:genScore(avg), n:recs.length};
+}
+const recMonth = r=>r.fecha?.slice(0,7);
+const recsOf = (sector,ym)=>S.recs.filter(r=>(!sector||r.sector===sector)&&(!ym||recMonth(r)===ym)).sort((a,b)=>(a.fecha+a.turno).localeCompare(b.fecha+b.turno));
+const ym = (y,m)=>`${y}-${String(m).padStart(2,"0")}`;
+function sectorYear(sector,y){ return MESES.map((_,i)=>aggregate(recsOf(sector,ym(y,i+1)))); }
+// Global: promedio de los sectores que tuvieron recorridas en el mes
+function globalMonth(y,m){
+  const per=SECTORES.map(s=>aggregate(recsOf(s.id,ym(y,m)))).filter(Boolean);
+  if(!per.length) return null;
+  const mean=a=>{const v=a.filter(x=>x!=null);return v.length?v.reduce((p,q)=>p+q,0)/v.length:null;};
+  return {cats:CATS.map((c,k)=>mean(per.map(p=>p.cats[k]))), gen:mean(per.map(p=>p.gen)), nSect:per.length};
+}
+// 8.a sugerido a partir del checklist (solapa ALÉRGENOS)
+function alergenosSugerido(al){
+  const v=Object.values(al||{}).map(x=>x.r).filter(r=>r==="C"||r==="NC");
+  if(!v.length) return null;
+  const p=v.filter(r=>r==="C").length/v.length;
+  return p===1?9: p>=0.6?6: p>0?3:0;
+}
+
+/* ============ DATOS (Google Sheets vía Apps Script) ============ */
+// >>> Pegá acá la URL de la implementación web del Apps Script (termina en /exec) <<<
+const API_URL = "";
+const SEED_VER = "planilla-2026-v1";
+const CACHE_KEY = "aromitalia_recorridas_cache_v1";
+const SEED = [{"id":"imp-POLVO-2026-w03","fecha":"2026-01-12","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":6,"1.b":0,"1.c":9,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":6,"3.b":6,"4.a":6,"4.b":9,"4.c":9,"5.a":9,"5.b":6,"5.c":9,"6.a":3,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"no se completo los POES semanales"},{"item":"","texto":"regillas sucias, delantales sueltos sobre mesada de trabajo, baldes de lapices sucio, objeto extraños en armario (tornillo)"},{"item":"","texto":"el cartel de mantenimiento falta asignacion de fechas"}],"destacar":"","origen":"planilla","creado":"2026-01-12T12:00:00"},{"id":"imp-POLVO-2026-w06","fecha":"2026-02-02","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-02-02T12:00:00"},{"id":"imp-POLVO-2026-w09","fecha":"2026-02-23","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":9,"1.b":6,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":6,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":6,"6.b":9,"7.a":6,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"falto completar 2 dias de poes"},{"item":"","texto":"estacion corrida"}],"destacar":"","origen":"planilla","creado":"2026-02-23T12:00:00"},{"id":"imp-POLVO-2026-w10","fecha":"2026-03-02","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":6,"1.b":6,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":6,"4.b":9,"4.c":9,"5.a":6,"5.b":3,"5.c":3,"6.a":6,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"en el armario se encontro una pala blanca (objeto extraño)"},{"item":"","texto":"faltaron completar dias en POES"},{"item":"","texto":"se comunica a manteniminto los desperfecrtos hay fechas establecidas pero no se cumplen"}],"destacar":"","origen":"planilla","creado":"2026-03-02T12:00:00"},{"id":"imp-POLVO-2026-w12","fecha":"2026-03-16","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-03-16T12:00:00"},{"id":"imp-POLVO-2026-w15","fecha":"2026-04-06","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":6,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"maquina que se arreglo con papel"}],"destacar":"","origen":"planilla","creado":"2026-04-06T12:00:00"},{"id":"imp-POLVO-2026-w17","fecha":"2026-04-20","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"se ve el sector acomodado y palas de alergenos bien cubiertas","origen":"planilla","creado":"2026-04-20T12:00:00"},{"id":"imp-POLVO-2026-w19","fecha":"2026-05-04","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"sala organizada","origen":"planilla","creado":"2026-05-04T12:00:00"},{"id":"imp-POLVO-2026-w24","fecha":"2026-06-08","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":6,"1.b":6,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":6,"4.b":9,"4.c":9,"5.a":6,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"POESincompleto solo 1 dia atrasado"},{"item":"","texto":"hay muestras vencidas 2023"},{"item":"","texto":"no cumple con velocidad de mezclado"}],"destacar":"","origen":"planilla","creado":"2026-06-08T12:00:00"},{"id":"imp-POLVO-2026-w26","fecha":"2026-06-22","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":6,"3.b":6,"4.a":6,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":6,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"se visualizo se al renvasar un fructosof no se estaba usando la pala correspondiente"},{"item":"","texto":"la estacion de monitoreo estaba movida y sin indentificacion"}],"destacar":"","origen":"planilla","creado":"2026-06-22T12:00:00"},{"id":"imp-POLVO-2026-w28","fecha":"2026-07-06","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":6,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":6,"7.b":9,"7.c":9,"8.a":6,"8.b":6},"alergenos":{},"desvios":[{"item":"","texto":"BALDE SIN ALERGENOS SIN BOLSA PROTECTORA DENTRO DEL ARMARIO"},{"item":"","texto":"BOLSAS CON ETIQUETAS SIN CUBRIR"}],"destacar":"","origen":"planilla","creado":"2026-07-06T12:00:00"},{"id":"imp-POLVO-2026-w31","fecha":"2026-07-27","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":9,"1.b":6,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-07-27T12:00:00"},{"id":"imp-POLVO-2026-w32","fecha":"2026-08-03","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-08-03T12:00:00"},{"id":"imp-POLVO-2026-w34","fecha":"2026-08-17","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":6,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"CARTON TIRADO EN LA SALA , SIN USO"},{"item":"","texto":"PRESENCIA DE MOSQUITOS EN EL ARMARIO"}],"destacar":"","origen":"planilla","creado":"2026-08-17T12:00:00"},{"id":"imp-POLVO-2026-w36","fecha":"2026-09-01","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":6,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"bolsas de 1er envase sin cuburi"},{"item":"","texto":"regilla de desague sucias"},{"item":"","texto":"estaciones de monitoreo sucias"}],"destacar":"","origen":"planilla","creado":"2026-09-01T12:00:00"},{"id":"imp-POLVO-2026-w38","fecha":"2026-09-14","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-09-14T12:00:00"},{"id":"imp-POLVO-2026-w41","fecha":"2026-10-05","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":9,"1.b":6,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"REGISTRO INCOMPLETO DEL SIA SABADO"}],"destacar":"","origen":"planilla","creado":"2026-10-05T12:00:00"},{"id":"imp-POLVO-2026-w43","fecha":"2026-10-19","turno":"","sector":"POLVO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":3,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":6,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"3a) personal nuevo no tiene conocimiento del instructivo de trabajo, por lo cual no aplica conocimientos"},{"item":"","texto":"planilla de mantenimiento sin revision por parte de mantenimiento"}],"destacar":"se logro durante el mes de octubre realizar limpieza profundaa todo el sector","origen":"planilla","creado":"2026-10-19T12:00:00"},{"id":"imp-OLEOSAS-2026-w04","fecha":"2026-01-19","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":6,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"poes sin completar se aviso a los operarios y lo van a completar"},{"item":"","texto":"bomba con restos de produccion"}],"destacar":"","origen":"planilla","creado":"2026-01-19T12:00:00"},{"id":"imp-OLEOSAS-2026-w06","fecha":"2026-02-02","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-02-02T12:00:00"},{"id":"imp-OLEOSAS-2026-w08","fecha":"2026-02-16","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":3,"5.c":3,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"planilla de comunicación a mantenimiento informando por operario pero sin firmar check de sup produccion y mantenimiento"},{"item":"","texto":"piso roto no informado en planilla tampoco relevado por mantwenimiento"}],"destacar":"sala realmente muy ordenada y limpia\ntodos los baldes limpios","origen":"planilla","creado":"2026-02-16T12:00:00"},{"id":"imp-OLEOSAS-2026-w10","fecha":"2026-03-02","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-03-02T12:00:00"},{"id":"imp-OLEOSAS-2026-w12","fecha":"2026-03-16","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":6,"1.c":9,"1.d":9,"2.a":9,"2.b":6,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"se debe completar la planilla de mantenimiento hay arreglos hechos pero no se estan cerrando en la planilla"}],"destacar":"se obseva mesada de trabajo muy prolija y debidamente identificado","origen":"planilla","creado":"2026-03-16T12:00:00"},{"id":"imp-OLEOSAS-2026-w15","fecha":"2026-04-06","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":6,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":6,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"utensillos fuera de lugar"},{"item":"","texto":"producto quimico fuera del lugar"},{"item":"","texto":"planilla de mantenimiento incompleta y desactualizada no se entiende por lo tanto no se puede realizar seguimiento"}],"destacar":"se observa propuesta de mejora de equipamiento","origen":"planilla","creado":"2026-04-06T12:00:00"},{"id":"imp-OLEOSAS-2026-w17","fecha":"2026-04-20","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-04-20T12:00:00"},{"id":"imp-OLEOSAS-2026-w20","fecha":"2026-05-11","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":6,"3.a":9,"3.b":6,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"se solicito al operarior cubirse o retirarse objeto extraño"}],"destacar":"la sala se encuentra ordenada y con el equipamiento limpio","origen":"planilla","creado":"2026-05-11T12:00:00"},{"id":"imp-OLEOSAS-2026-w22","fecha":"2026-05-25","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-05-25T12:00:00"},{"id":"imp-OLEOSAS-2026-w24","fecha":"2026-06-08","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-06-08T12:00:00"},{"id":"imp-OLEOSAS-2026-w26","fecha":"2026-06-22","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"no hay actividad en la sala"}],"destacar":"","origen":"planilla","creado":"2026-06-22T12:00:00"},{"id":"imp-OLEOSAS-2026-w28","fecha":"2026-07-06","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":6,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":6,"8.b":6},"alergenos":{},"desvios":[{"item":"","texto":"TRITURADORA SUCIA"}],"destacar":"","origen":"planilla","creado":"2026-07-06T12:00:00"},{"id":"imp-OLEOSAS-2026-w30","fecha":"2026-07-20","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":6,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"SIN PLANILLA DE COMUNICACIÓN DE MANTENIMIENTO EN EL SECTOR"},{"item":"","texto":"SE RECOMIENDA EL USO DE PROTECCION AUDITIVA EN ÑA SALA DURANTE RECORRIDA S EVERIFICA NIVEL DE RUIDOS ELEVADO"}],"destacar":"SE VEN MEJORAS EN LA SALA DE PROPUESTA 5S","origen":"planilla","creado":"2026-07-20T12:00:00"},{"id":"imp-OLEOSAS-2026-w32","fecha":"2026-08-03","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":6,"8.b":6},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-08-03T12:00:00"},{"id":"imp-OLEOSAS-2026-w34","fecha":"2026-08-17","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":6,"8.b":6},"alergenos":{},"desvios":[{"item":"","texto":"UNO DE LOS OPERADORES NO SABIA PROCEDIMIENTO ANTI DERRAME"}],"destacar":"ORDEN Y LIMPIEZA BIEN\nUSO DE TABLERO DE ACCIONES","origen":"planilla","creado":"2026-08-17T12:00:00"},{"id":"imp-OLEOSAS-2026-w36","fecha":"2026-09-01","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":6,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":6,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"se visualizan carton eebajo de la memack"},{"item":"","texto":"fala de barbijo a la hora de fraccionar productro e incorporarlo en elequipo"}],"destacar":"","origen":"planilla","creado":"2026-09-01T12:00:00"},{"id":"imp-OLEOSAS-2026-w38","fecha":"2026-09-14","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":6,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"se observa personal con uniforme sucio, se hace observacion"}],"destacar":"se observa una buena limpieza general y limpiea debado del entre piso","origen":"planilla","creado":"2026-09-14T12:00:00"},{"id":"imp-OLEOSAS-2026-w41","fecha":"2026-10-05","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"MANTENIMIENTO:ZOCALOS ROTOS Y DESPRENDIDOS"},{"item":"","texto":"1d: acumulacion de desechos en rejillas"}],"destacar":"durante el mes de octubre se realizaron varias observaciones correctivas de la cual las acciones correctrivas fueron inmediatas\ncompromiso y buena predisposicion del sector","origen":"planilla","creado":"2026-10-05T12:00:00"},{"id":"imp-OLEOSAS-2026-w43","fecha":"2026-10-19","turno":"","sector":"OLEOSAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[],"destacar":"se les renovo las etiquetas a los baldes de productos","origen":"planilla","creado":"2026-10-19T12:00:00"},{"id":"imp-PASTAS-2026-w04","fecha":"2026-01-19","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":3,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"no usa cubre barba"},{"item":"","texto":"personal con barba"},{"item":"","texto":"cucaracha en piso"}],"destacar":"","origen":"planilla","creado":"2026-01-19T12:00:00"},{"id":"imp-PASTAS-2026-w06","fecha":"2026-02-02","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-02-02T12:00:00"},{"id":"imp-PASTAS-2026-w08","fecha":"2026-02-16","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":6,"1.b":6,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":6,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":6,"6.b":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"falto completar 2 dias en registro poes"},{"item":"","texto":"Falta completar registro POES freezer"}],"destacar":"","origen":"planilla","creado":"2026-02-16T12:00:00"},{"id":"imp-PASTAS-2026-w10","fecha":"2026-03-02","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":6,"2.a":9,"2.b":6,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":6,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"falta limpieza general del sector"},{"item":"","texto":"falta uso de EPP"},{"item":"","texto":"falta completa planilla de mantemineto por el sector manteminento"}],"destacar":"","origen":"planilla","creado":"2026-03-02T12:00:00"},{"id":"imp-PASTAS-2026-w12","fecha":"2026-03-16","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"falta orden en bin de la sala, bolsas abiertas"}],"destacar":"","origen":"planilla","creado":"2026-03-16T12:00:00"},{"id":"imp-PASTAS-2026-w15","fecha":"2026-04-06","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":6,"1.b":6,"1.c":9,"1.d":6,"2.a":9,"2.b":6,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-04-06T12:00:00"},{"id":"imp-PASTAS-2026-w17","fecha":"2026-04-20","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-04-20T12:00:00"},{"id":"imp-PASTAS-2026-w19","fecha":"2026-05-04","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":6,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":3,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"perdida de aceite cilindro olla l2, caño extractor sucio y sin encastrar"},{"item":"","texto":"tapa de frezzer rota sin la v"},{"item":"","texto":"sin cheack ni fecha prevista por mantenimiento"},{"item":"","texto":"utensillos sucios y oxidados"}],"destacar":"","origen":"planilla","creado":"2026-05-04T12:00:00"},{"id":"imp-PASTAS-2026-w21","fecha":"2026-05-18","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"olla de L2 picada"},{"item":"","texto":"coordinar limpieza en paredes"}],"destacar":"","origen":"planilla","creado":"2026-05-18T12:00:00"},{"id":"imp-PASTAS-2026-w24","fecha":"2026-06-08","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":6,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.b":6,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"se notaron ganchitos para abrochadora sueltos en cajita junto con bandiras elasticas"},{"item":"","texto":"cucarachas y charco debajo de silo de glucosa"}],"destacar":"","origen":"planilla","creado":"2026-06-08T12:00:00"},{"id":"imp-PASTAS-2026-w26","fecha":"2026-06-22","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"olla en reparacion"},{"item":"","texto":"sin bolsa de basura en tacho"}],"destacar":"","origen":"planilla","creado":"2026-06-22T12:00:00"},{"id":"imp-PASTAS-2026-w28","fecha":"2026-07-06","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"SE OBSERVA MANGUERAS CORRUGADAS DISPERSAS EN EL PISO"},{"item":"","texto":"ESPONJA ROTA"},{"item":"","texto":"FALTA IDENTIFICAR HERRAMIENTAS"}],"destacar":"","origen":"planilla","creado":"2026-07-06T12:00:00"},{"id":"imp-PASTAS-2026-w30","fecha":"2026-07-20","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":6,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-07-20T12:00:00"},{"id":"imp-PASTAS-2026-w33","fecha":"2026-08-10","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"UTENSILLO DE LIMPIEZA EN MAL ACONDICIONAMIENTO"}],"destacar":"","origen":"planilla","creado":"2026-08-10T12:00:00"},{"id":"imp-PASTAS-2026-w35","fecha":"2026-08-24","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":6,"8.b":6},"alergenos":{},"desvios":[{"item":"","texto":"HAY ITEWMS DE POES SIN HACER, TAREAS, Y NO SE PONE MOTIVO, AL MOMENTO DE LA RECORRIDA SE DETECTO UN OLOR FUERTE"}],"destacar":"","origen":"planilla","creado":"2026-08-24T12:00:00"},{"id":"imp-PASTAS-2026-w36","fecha":"2026-09-01","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"falta orden segregacion e identificacion clara en la sala"}],"destacar":"colaboracion del personal de pastas con procedimientos de alergenos, buena predisposicion del personal","origen":"planilla","creado":"2026-09-01T12:00:00"},{"id":"imp-PASTAS-2026-w38","fecha":"2026-09-14","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":6,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"cucarachas muertas/ huevo vencido en frezzer, se avso a supervisor y operarios"},{"item":"","texto":"se hizo refuerso de pragas  por presencia de cucarachas"}],"destacar":"","origen":"planilla","creado":"2026-09-14T12:00:00"},{"id":"imp-PASTAS-2026-w41","fecha":"2026-10-05","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":6,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"baldes sin tapar"}],"destacar":"","origen":"planilla","creado":"2026-10-05T12:00:00"},{"id":"imp-PASTAS-2026-w43","fecha":"2026-10-19","turno":"","sector":"PASTAS","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"se observa desorden parcialmente (se recomienda 5s en el sector)"}],"destacar":"","origen":"planilla","creado":"2026-10-19T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w03","fecha":"2026-01-12","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"placa de pegamento con varias moscas muy lleno equpo n°1"}],"destacar":"","origen":"planilla","creado":"2026-01-12T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w05","fecha":"2026-01-26","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-01-26T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w06","fecha":"2026-02-02","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":3,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-02-02T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w09","fecha":"2026-02-23","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":3,"2.a":9,"2.b":9,"2.c":6,"3.a":6,"3.b":6,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":6,"5.c":9,"6.a":6,"6.b":3,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"palet sin etiqueta de alergeno"},{"item":"","texto":"color aroma rack y estanterias muy sucias"},{"item":"","texto":"cortina de color aroma rota"},{"item":"","texto":"utensillos muy sucios"},{"item":"","texto":"no se encuentra planilla de mantenimiento"}],"destacar":"","origen":"planilla","creado":"2026-02-23T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w11","fecha":"2026-03-09","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-03-09T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w13","fecha":"2026-03-23","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":6,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-03-23T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w14","fecha":"2026-04-01","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":6,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-04-01T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w16","fecha":"2026-04-13","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":6,"1.b":6,"1.c":9,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":6,"4.c":6,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"cambio de sistema no estan los vales"},{"item":"","texto":"pala sucia"},{"item":"","texto":"polvo en piso"}],"destacar":"","origen":"planilla","creado":"2026-04-13T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w19","fecha":"2026-05-04","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":3,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":6,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"no se completaron los ultimos dias en el poes de encajado"},{"item":"","texto":"no se completo poes Pedeposito"}],"destacar":"","origen":"planilla","creado":"2026-05-04T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w21","fecha":"2026-05-18","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":6,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"balanza oxidada"}],"destacar":"","origen":"planilla","creado":"2026-05-18T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w23","fecha":"2026-06-01","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":6,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"cambiar pala/rociador escoba y pala sucia"}],"destacar":"","origen":"planilla","creado":"2026-06-01T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w25","fecha":"2026-06-15","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":6,"3.a":6,"3.b":6,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"taper con bolsas de fraccionado sin tapa"}],"destacar":"","origen":"planilla","creado":"2026-06-15T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w29","fecha":"2026-07-13","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"SIN PLANILLA DE COMUNICACIÓN DE MANTENIMIENTO EN EL SECTOR"}],"destacar":"","origen":"planilla","creado":"2026-07-13T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w31","fecha":"2026-07-27","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"SE VISUALIZA ETIQUETA DE ALERGENO DESPEGADA Y FILM STRICH DE PALET SUELTO"}],"destacar":"LA SALA SE ENCONTRO EN ORDEN","origen":"planilla","creado":"2026-07-27T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w33","fecha":"2026-08-10","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-08-10T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w35","fecha":"2026-08-24","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-08-24T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w37","fecha":"2026-09-07","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-09-07T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w39","fecha":"2026-09-21","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":6,"7.c":9,"8.a":6,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"SE VISUALIZAN MOSQUITAS EN LA SALA SOBRE LOS BINES DE MP"},{"item":"","texto":"faltaba cartel de alergenos en los palet preparados"}],"destacar":"","origen":"planilla","creado":"2026-09-21T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w41","fecha":"2026-10-05","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"SE OBSERVA HUMEDAD, PROVENIENTE DE LA CAMARA DE FRIO"}],"destacar":"El operario a cargo de la preparacion de precarga, surgio sistema de sosten de tapa en contenedores","origen":"planilla","creado":"2026-10-05T12:00:00"},{"id":"imp-PREDEPOSITO-2026-w43","fecha":"2026-10-19","turno":"","sector":"PREDEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-10-19T12:00:00"},{"id":"imp-DEPOSITO-2026-w03","fecha":"2026-01-12","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":9,"1.b":0,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":6,"3.b":6,"4.a":6,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":3,"6.b":9,"7.a":6,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"los POES no se compeltan hace mas de 3 semanas"}],"destacar":"","origen":"planilla","creado":"2026-01-12T12:00:00"},{"id":"imp-DEPOSITO-2026-w05","fecha":"2026-01-26","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":9,"1.b":6,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":6},"alergenos":{},"desvios":[{"item":"","texto":"porton abierto"},{"item":"","texto":"completo completo en la fecha que no coresponde"}],"destacar":"","origen":"planilla","creado":"2026-01-26T12:00:00"},{"id":"imp-DEPOSITO-2026-w06","fecha":"2026-02-02","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":6,"1.b":6,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":6,"6.b":9,"7.a":6,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"falta completR POES SEMANS Y DIAS"},{"item":"","texto":"caja en stock rota"}],"destacar":"","origen":"planilla","creado":"2026-02-02T12:00:00"},{"id":"imp-DEPOSITO-2026-w08","fecha":"2026-02-16","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":6,"1.b":0,"1.c":3,"1.d":3,"2.a":9,"2.b":9,"2.c":9,"3.a":6,"3.b":6,"4.a":6,"4.b":9,"4.c":9,"5.a":9,"5.b":3,"5.c":9,"6.a":6,"6.b":9,"7.a":6,"7.b":9,"7.c":6},"alergenos":{},"desvios":[{"item":"","texto":"poes incompleto se aviso varias veces a lucas y diego de compeltar"},{"item":"","texto":"lugar de trabajo muy sucioy con papeles mezclados"},{"item":"","texto":"depsito ordenado/ empaque desordenado"}],"destacar":"el desposito se nota mas ordenado","origen":"planilla","creado":"2026-02-16T12:00:00"},{"id":"imp-DEPOSITO-2026-w11","fecha":"2026-03-09","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":6,"1.b":6,"1.c":6,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-03-09T12:00:00"},{"id":"imp-DEPOSITO-2026-w13","fecha":"2026-03-23","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":6,"1.b":6,"1.c":9,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":6,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":6,"7.c":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-03-23T12:00:00"},{"id":"imp-DEPOSITO-2026-w14","fecha":"2026-04-01","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":6,"1.b":6,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":6,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"palet con materia prima vencida"},{"item":"","texto":"poes incompleto"}],"destacar":"","origen":"planilla","creado":"2026-04-01T12:00:00"},{"id":"imp-DEPOSITO-2026-w16","fecha":"2026-04-13","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":9,"1.b":6,"1.c":3,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"falta completar poes"},{"item":"","texto":"equipos de limpieza sucio y rotos"}],"destacar":"","origen":"planilla","creado":"2026-04-13T12:00:00"},{"id":"imp-DEPOSITO-2026-w19","fecha":"2026-05-04","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":6,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":6,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"utensillos de limpiesa muy sucios , bolsas sucias y con piedras, ambas en cables 7 tableros"}],"destacar":"","origen":"planilla","creado":"2026-05-04T12:00:00"},{"id":"imp-DEPOSITO-2026-w21","fecha":"2026-05-18","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":3,"1.b":0,"1.c":9,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":3,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"caja de cacao y yogurthmix 40 abierta"},{"item":"","texto":"set de limpieza sucio"}],"destacar":"","origen":"planilla","creado":"2026-05-18T12:00:00"},{"id":"imp-DEPOSITO-2026-w23","fecha":"2026-06-01","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":6,"1.b":6,"1.c":6,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"caja en el suelo sin palet/mustra en palet van a buscar ubicación"},{"item":"","texto":"incompleto se explico como completar y a que hace referencia bidones"}],"destacar":"zona marcadas y ficha de tareas hechas","origen":"planilla","creado":"2026-06-01T12:00:00"},{"id":"imp-DEPOSITO-2026-w25","fecha":"2026-06-15","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":3,"1.b":3,"1.c":6,"1.d":6,"2.a":6,"2.b":9,"2.c":9,"3.a":6,"3.b":6,"4.a":6,"4.b":9,"4.c":9,"5.a":6,"5.b":9,"5.c":9,"6.a":6,"6.b":9,"7.a":9,"7.b":9,"7.c":9},"alergenos":{},"desvios":[{"item":"","texto":"zona de empaque con mucho desorden/ropa sucia, strich en el piso estanteria palet tachos llenos objetos extraños en el piso"},{"item":"","texto":"poes incompletos, papel y herramientas sueltas"},{"item":"","texto":"palet de peña"}],"destacar":"","origen":"planilla","creado":"2026-06-15T12:00:00"},{"id":"imp-DEPOSITO-2026-w28","fecha":"2026-07-06","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":6,"8.b":6},"alergenos":{},"desvios":[{"item":"","texto":"ZONA DONDE ESTAN EQUIPO (TUEBION) DESORDENADO , PUERTA SUELTA DE MUEBRE DONDE SE GUARDAN MUESTRAS"},{"item":"","texto":"ZONA DE DEVOLUCIONES CON PEDIDOS"}],"destacar":"","origen":"planilla","creado":"2026-07-06T12:00:00"},{"id":"imp-DEPOSITO-2026-w30","fecha":"2026-07-20","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":6,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"SIN PLANILLA MANTENIMEINTO"},{"item":"","texto":"UTENSILLOS EN MAL ESTADO SUCIOS"}],"destacar":"SE OBSERVA MEJORA EN CUANTO A ORDEN Y LIMPIEZA Y REGISTRO POES EN EL AREA DE EMPAQUETADO","origen":"planilla","creado":"2026-07-20T12:00:00"},{"id":"imp-DEPOSITO-2026-w33","fecha":"2026-08-10","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":6,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":6,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":6,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"palet obstruyendo los pasillos"},{"item":"","texto":"palet de producto ,sin etiqueta naranja visible"},{"item":"","texto":"utensillos y escoba sucios/ percudidos"}],"destacar":"","origen":"planilla","creado":"2026-08-10T12:00:00"},{"id":"imp-DEPOSITO-2026-w35","fecha":"2026-08-24","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":6,"1.b":6,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":6,"4.b":9,"4.c":9,"5.a":9,"5.b":6,"5.c":6,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":6,"8.b":6},"alergenos":{},"desvios":[{"item":"","texto":"cajas en el piso"},{"item":"","texto":"no funciona la encajadora, no se registro en planila de mantenimiento"},{"item":"","texto":"poes incompleto"}],"destacar":"","origen":"planilla","creado":"2026-08-24T12:00:00"},{"id":"imp-DEPOSITO-2026-w37","fecha":"2026-09-07","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":6,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"desorden en el area destinado para almacenmientos de muestras"}],"destacar":"se visualiza el sector destinado para equipos  organizado según el estándar visual","origen":"planilla","creado":"2026-09-07T12:00:00"},{"id":"imp-DEPOSITO-2026-w39","fecha":"2026-09-21","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":9,"1.b":3,"1.c":9,"1.d":6,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":6,"4.a":6,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":6,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[{"item":"","texto":"no se completaron las planillas POES d la semana"},{"item":"","texto":"se visualizan restos de film en el piso"},{"item":"","texto":"balde para goteras sobre palet de producto terminado"}],"destacar":"","origen":"planilla","creado":"2026-09-21T12:00:00"},{"id":"imp-DEPOSITO-2026-w41","fecha":"2026-10-05","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[],"destacar":"","origen":"planilla","creado":"2026-10-05T12:00:00"},{"id":"imp-DEPOSITO-2026-w43","fecha":"2026-10-19","turno":"","sector":"DEPOSITO","responsable":"","scores":{"1.a":9,"1.b":9,"1.c":9,"1.d":9,"2.a":9,"2.b":9,"2.c":9,"3.a":9,"3.b":9,"4.a":9,"4.b":9,"4.c":9,"5.a":9,"5.b":9,"5.c":9,"6.a":9,"6.b":9,"7.a":9,"7.b":9,"7.c":9,"8.a":9,"8.b":9},"alergenos":{},"desvios":[],"destacar":"se observa mejora en el orden de muestras y gestion visual","origen":"planilla","creado":"2026-10-19T12:00:00"}];
+function syncMsg(msg,col){ const e=document.getElementById("sync"); if(e){ e.textContent=msg; e.style.color=col||"var(--ink-3)"; } }
+function cacheSave(){ try{ localStorage.setItem(CACHE_KEY, JSON.stringify({recs:S.recs,trat:S.trat})); }catch(e){} }
+function applyRows(rows){
+  const recs=[], trat={}; let seedVer="";
+  rows.forEach(r=>{ const k=String(r[0]||""); let v; try{ v=typeof r[1]==="string"?JSON.parse(r[1]):r[1]; }catch(e){ return; }
+    if(k.startsWith("rec:")) recs.push({...v,id:k.slice(4)}); else if(k.startsWith("trat:")) trat[k.slice(5)]=v; else if(k==="meta:seed") seedVer=v; });
+  S.recs=recs; S.trat=trat; return seedVer;
+}
+function initDefaults(){
+  if(!S._init && S.recs.length){ S._init=true; const last=S.recs.map(recMonth).filter(Boolean).sort().pop();
+    if(!S.recs.some(r=>recMonth(r)===S.f.mes)) S.f.mes=last; S.f.anio=+last.slice(0,4); S.f.d.anio=S.f.anio; }
+}
+async function initData(silent){
+  S.canWrite = true;
+  if(!API_URL || API_URL.indexOf("script.google.com")<0){
+    S.db=false; S.loaded=true; S.loadErr="Falta configurar la conexión con la planilla de Google (API_URL). Hasta entonces la app no puede guardar ni leer recorridas.";
+    render(); syncMsg("⚠ Sin conexión configurada","var(--bad)"); return;
+  }
+  S.db=true;
+  if(!silent) syncMsg("⏳ Cargando…","var(--warn)");
+  try{
+    const res=await fetch(API_URL+(API_URL.includes("?")?"&":"?")+"t="+Date.now());
+    const rows=await res.json(); if(!Array.isArray(rows)) throw new Error("respuesta inesperada");
+    const seedVer=applyRows(rows); cacheSave(); S.loadErr=null; initDefaults();
+    syncMsg("✓ Sincronizado","var(--ok)"); S.loaded=true; render(true);
+    if(seedVer!==SEED_VER) sembrar();
+  }catch(e){
+    console.error(e);
+    try{ const c=JSON.parse(localStorage.getItem(CACHE_KEY)||"null"); if(c){ S.recs=c.recs||[]; S.trat=c.trat||{}; initDefaults(); } }catch(e2){}
+    S.loaded=true; if(!silent) S.loadErr="No se pudo leer la planilla de Google. Se muestran los últimos datos guardados en este equipo.";
+    syncMsg("⚠ Sin conexión con la planilla","var(--warn)"); render(true);
+  }
+}
+// Carga única del historial 2026 de la planilla Excel (si ya existe un registro con ese id, no lo pisa)
+async function sembrar(){
+  const ids=new Set(S.recs.map(r=>r.id)); const nuevos=SEED.filter(r=>!ids.has(r.id));
+  nuevos.forEach(({id,...d})=>S.recs.push({...d,id})); render(true);
+  syncMsg(`⏳ Cargando historial en la planilla (${nuevos.length} recorridas)…`,"var(--warn)");
+  const items=nuevos.map(({id,...d})=>({key:"rec:"+id,value:d})); items.push({key:"meta:seed",value:SEED_VER});
+  await fetch(API_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({action:"bulk",items})}).catch(()=>{}); cacheSave(); initDefaults(); syncMsg("✓ Sincronizado","var(--ok)"); render(true);
+}
+function apiPut(key,value,quiet){
+  return fetch(API_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({key,value})})
+    .then(()=>{ if(!quiet) syncMsg("✓ Guardado en la planilla","var(--ok)"); })
+    .catch(e=>{ syncMsg("⚠ No se pudo guardar en la planilla","var(--bad)"); throw {code:"unavailable"}; });
+}
+function apiDel(key){
+  return fetch(API_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({action:"delete",key})})
+    .then(()=>syncMsg("✓ Eliminado","var(--ok)")).catch(e=>{ syncMsg("⚠ No se pudo eliminar","var(--bad)"); throw {code:"unavailable"}; });
+}
+async function saveRec(rec){
+  if(!S.db) throw {code:"unavailable"};
+  const id = rec.id || ("r-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,7));
+  const data = {...rec}; delete data.id;
+  data.actualizado = new Date().toISOString();
+  if(!data.creado) data.creado = data.actualizado;
+  await apiPut("rec:"+id,data);
+  const i=S.recs.findIndex(r=>r.id===id); if(i>=0) S.recs[i]={...data,id}; else S.recs.push({...data,id}); cacheSave();
+  return id;
+}
+async function deleteRec(id){ await apiDel("rec:"+id); S.recs=S.recs.filter(r=>r.id!==id); cacheSave(); render(); }
+async function saveTrat(key,data){ await apiPut("trat:"+key,data); S.trat[key]=data; cacheSave(); }
+// refresco periódico para ver lo que cargan otros usuarios
+setInterval(()=>{ if(S.db && !document.hidden && !(S.view==="nueva"&&S.draft) && !S.dEdit) initData(true); }, 120000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden && S.db && !(S.view==="nueva"&&S.draft) && !S.dEdit) initData(true); });
+
+/* ============ DESCARGAS ============ */
+async function saveFile(filename, data){
+  try{
+    const blob = data instanceof Blob ? data : new Blob([data]);
+    const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+  }catch(e){ toast("No se pudo descargar el archivo.",true); }
+}
+function pdfHeader(doc,title,sub){
+  const W=doc.internal.pageSize.getWidth();
+  doc.addImage(LOGO,"JPEG",14,10,42,42/LOGO_RATIO);
+  doc.setFont("helvetica","bold"); doc.setFontSize(14); doc.setTextColor(31,47,83);
+  doc.text(title, W-14, 16, {align:"right"});
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(90,90,90);
+  if(sub) doc.text(sub, W-14, 22, {align:"right"});
+  doc.setDrawColor(31,47,83); doc.setLineWidth(0.6); doc.line(14,27,W-14,27);
+  return 33;
+}
+function pdfFooter(doc,cod){
+  const n=doc.getNumberOfPages(), W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+  for(let i=1;i<=n;i++){ doc.setPage(i); doc.setFontSize(8); doc.setTextColor(130,130,130);
+    doc.text(`Aromitalia · ${cod||FORM.codigo} · Generado el ${fdate(today())}`,14,H-8); doc.text(`Página ${i} de ${n}`,W-14,H-8,{align:"right"}); }
+}
+const AT = {theme:"grid", styles:{fontSize:8.5,cellPadding:1.8,lineColor:[220,220,215],lineWidth:0.2,textColor:[25,25,25]}, headStyles:{fillColor:[31,47,83],textColor:255,fontStyle:"bold"}, margin:{left:14,right:14}};
+function pdfChart(doc,canvasId,y,h){
+  const c=document.getElementById(canvasId); if(!c) return y;
+  const W=doc.internal.pageSize.getWidth()-28; const ratio=c.width/c.height;
+  let w=W, hh=W/ratio; if(hh>h){hh=h; w=h*ratio;}
+  if(y+hh>doc.internal.pageSize.getHeight()-15){doc.addPage(); y=15;}
+  const t=document.createElement("canvas"); t.width=c.width; t.height=c.height; const x=t.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,t.width,t.height); x.drawImage(c,0,0);
+  doc.addImage(t.toDataURL("image/jpeg",0.9),"JPEG",14+(W-w)/2,y,w,hh,undefined,"FAST"); return y+hh+4;
+}
+function pdfSection(doc,title,y){
+  if(y>doc.internal.pageSize.getHeight()-30){doc.addPage(); y=15;}
+  doc.setFont("helvetica","bold"); doc.setFontSize(10.5); doc.setTextColor(31,47,83); doc.text(title,14,y); return y+4;
+}
+const lastY = doc=>doc.lastAutoTable.finalY+7;
+const pctX = v=> v==null?"":Math.round(v*1000)/1000; // para Excel
+
+/* ============ GRÁFICOS ============ */
+const charts={};
+function mkChart(id,cfg){
+  if(charts[id]){charts[id].destroy();}
+  const el=document.getElementById(id); if(!el||!window.Chart) return;
+  cfg.options=Object.assign({responsive:true,maintainAspectRatio:false,animation:false,devicePixelRatio:2,
+    plugins:{legend:{position:"bottom",labels:{boxWidth:12,boxHeight:12,font:{family:"Inter",size:12},color:"#52514e"}},
+      tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${pct(ctx.raw)}`}}},
+    scales:{y:{min:0,max:1,ticks:{callback:v=>Math.round(v*100)+"%",color:"#86857f",font:{size:11}},grid:{color:"#ecebe6"},border:{display:false}},
+      x:{ticks:{color:"#52514e",font:{size:11},maxRotation:0,autoSkip:false},grid:{display:false}}}},cfg.options||{});
+  (cfg.data.datasets||[]).forEach(d=>Object.assign(d,{borderRadius:4,borderSkipped:"bottom",maxBarThickness:34,borderWidth:0},d));
+  charts[id]=new Chart(el,cfg);
+}
+const wrapLabel = s=>{const w=s.split(" ");const out=[];let l="";w.forEach(x=>{if((l+" "+x).trim().length>14){out.push(l.trim());l=x;}else l+=" "+x;});out.push(l.trim());return out.filter(Boolean);};
+
+/* ============ RENDER ============ */
+function render(fromData){
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===S.view));
+  // no re-renderizar el formulario mientras se completa cuando llegan datos
+  if(fromData && ((S.view==="nueva" && S.draft) || (S.view==="desvios" && S.dEdit))) return;
+  const app=$("#app");
+  let banner="";
+  if(S.loadErr) banner=`<div class="banner warn">${esc(S.loadErr)}</div>`;
+  else if(false) banner=`<div class="banner warn">Tenés acceso de solo lectura: podés ver y descargar reportes, pero no cargar recorridas.</div>`;
+  if(!S.loaded){ app.innerHTML=`<div class="empty">Cargando recorridas…</div>`; return; }
+  const v=S.view;
+  if(v==="nueva") return renderForm(app,banner);
+  if(v==="historial") return renderHist(app,banner);
+  if(v==="desvios") return renderDesvios(app,banner);
+  if(v==="mensual") return renderMensual(app,banner);
+  if(v==="anual") return renderAnual(app,banner);
+  if(v==="global") return renderGlobal(app,banner);
+}
+function go(v){ S.view=v; S.dEdit=null; S.tDraft=null; if(v!=="nueva"){S.draft=null;S.editingId=null;} if(location.hash!=="#"+v) history.replaceState(null,"","#"+v); render(); window.scrollTo(0,0); }
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b) go(b.dataset.v);});
+
+/* ---------- Formulario de recorrida ---------- */
+function newDraft(){ return {fecha:today(),turno:"",sector:"",responsable:"",scores:{},alergenos:{},desvios:[],destacar:"",origen:"app"}; }
+function renderForm(app,banner){
+  if(!S.draft) S.draft=newDraft();
+  const d=S.draft;
+  const sec=SECTORES.find(s=>s.id===d.sector);
+  const alList = sec? ALERGENOS[sec.al]:null;
+  const sug = alergenosSugerido(d.alergenos);
+  app.innerHTML = `${banner}
+  <div class="toolbar"><div><h1>${S.editingId?"Editar recorrida":"Nueva recorrida de planta"}</h1>
+  <div class="muted small">${FORM.codigo} · Revisión ${FORM.revision} · ${FORM.fecha}</div></div>
+  ${S.editingId?`<button class="btn" id="cancel-edit">Cancelar edición</button>`:""}</div>
+  <div class="card"><div class="row">
+    <div class="field"><label>Fecha *</label><input type="date" id="f-fecha" value="${esc(d.fecha)}"></div>
+    <div class="field" style="max-width:150px"><label>Turno</label><select id="f-turno"><option value="">—</option>${TURNOS.map(t=>`<option ${d.turno===t?"selected":""}>${t}</option>`).join("")}</select></div>
+    <div class="field" style="flex:2;min-width:240px"><label>Sector *</label><select id="f-sector"><option value="">Elegí el sector…</option>${SECTORES.map(s=>`<option value="${s.id}" ${d.sector===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</select></div>
+    <div class="field"><label>Responsable recorrida *</label><input type="text" id="f-resp" list="resp-list" value="${esc(d.responsable)}" placeholder="Iniciales o nombre"><datalist id="resp-list">${RESPONSABLES.map(r=>`<option value="${r}">`).join("")}</datalist></div>
+  </div><div class="legend-note">${PUNTAJE_TXT} · N/E = no evaluado (no cuenta en el puntaje)</div></div>
+  <div id="cats">${CATS.map(c=>`
+    <div class="cat"><div class="cat-h"><span>${c.n}. ${c.nombre.toUpperCase()}</span><span class="pct" data-cat="${c.n}">${pct(catScore(d.scores,c.n))}</span></div>
+    ${c.n===8?alergenosBlock(alList,d,sug):""}
+    ${c.items.map(([cod,nom,crit])=>{const val=d.scores[cod];return `
+      <div class="item"><div><div class="lab">${cod}. ${esc(nom)}</div><div class="crit">${esc(crit)}${cod==="8.a"&&sug!=null?` <b style="color:var(--navy)">· Sugerido por checklist: ${sug}</b>`:""}</div>
+        <button class="add-dev" data-dev="${cod}">+ registrar desvío</button></div>
+      <div class="seg" data-item="${cod}">${[0,3,6,9].map(n=>`<button data-v="${n}" class="${val===n?"on":""}">${n}</button>`).join("")}<button data-v="ne" class="${val==null?"on":""}">N/E</button></div></div>`;}).join("")}
+    </div>`).join("")}</div>
+  <div class="card"><h2>Detalle de desvíos</h2><div id="devs"></div><button class="btn sm" id="add-dev">+ Agregar desvío</button></div>
+  <div class="card"><h2>Puntos a destacar</h2><textarea id="f-dest" placeholder="Mejoras observadas, buenas prácticas, sugerencias del personal…">${esc(d.destacar)}</textarea></div>
+  <div class="sticky-save"><div><span class="muted small">PUNTAJE GENERAL</span> <span class="score-big" id="gen">${pct(genScore(d.scores))}</span> <span class="muted small" id="evalc"></span></div>
+    <div class="row"><button class="btn" id="clear">Limpiar</button><button class="btn primary" id="save" ${S.db&&S.canWrite!==false?"":"disabled"}>${S.editingId?"Guardar cambios":"Guardar recorrida"}</button></div></div>`;
+  renderDevs(); updateTotals();
+  $("#f-fecha").onchange=e=>d.fecha=e.target.value;
+  $("#f-turno").onchange=e=>d.turno=e.target.value;
+  $("#f-resp").oninput=e=>d.responsable=e.target.value;
+  $("#f-dest").oninput=e=>d.destacar=e.target.value;
+  $("#f-sector").onchange=e=>{d.sector=e.target.value; d.alergenos={}; renderForm(app,banner);};
+  $("#cats").addEventListener("click",e=>{
+    const b=e.target.closest(".seg[data-item] button");
+    if(b){const cod=b.parentElement.dataset.item; const v=b.dataset.v; if(v==="ne") delete d.scores[cod]; else d.scores[cod]=+v;
+      b.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b)); updateTotals(); return;}
+    const a=e.target.closest(".al-row .seg button");
+    if(a){const k=a.parentElement.dataset.al; d.alergenos[k]=Object.assign(d.alergenos[k]||{},{r:a.dataset.a});
+      a.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===a));
+      const s=alergenosSugerido(d.alergenos); $("#al-sug").textContent = s==null?"—":s;
+      if(s!=null){ d.scores["8.a"]=s; const seg=$('.seg[data-item="8.a"]'); seg.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.v===String(s))); }
+      updateTotals(); return;}
+    const dv=e.target.closest("[data-dev]");
+    if(dv){d.desvios.push({item:dv.dataset.dev,texto:""}); renderDevs(true);}
+  });
+  $("#cats").addEventListener("input",e=>{const i=e.target.closest("input[data-alobs]"); if(i){const k=i.dataset.alobs; d.alergenos[k]=Object.assign(d.alergenos[k]||{},{obs:i.value});}});
+  $("#add-dev").onclick=()=>{d.desvios.push({item:"",texto:""}); renderDevs(true);};
+  $("#clear").onclick=()=>modal("<p>¿Borrar todo lo cargado en este formulario?</p>",[{label:"Cancelar"},{label:"Limpiar",cls:"danger",fn:()=>{S.draft=newDraft();S.editingId=null;render();}}]);
+  if($("#cancel-edit")) $("#cancel-edit").onclick=()=>{S.draft=null;S.editingId=null;go("historial");};
+  $("#save").onclick=onSave;
+}
+function alergenosBlock(list,d,sug){
+  if(!list) return `<div class="al-row"><div class="muted small">Elegí el sector para ver el checklist de alérgenos.</div></div>`;
+  const c=Object.values(d.alergenos).filter(x=>x.r==="C").length, nc=Object.values(d.alergenos).filter(x=>x.r==="NC").length;
+  return `<div class="al-row" style="background:#fafaf8"><div class="small"><b>Checklist de alérgenos del sector</b> — completá para obtener el puntaje sugerido de 8.a (100% → 9 · 60–99% → 6 · &lt;60% → 3 · ninguno → 0)</div><div class="small">8.a sugerido: <b id="al-sug">${sug==null?"—":sug}</b></div></div>
+  ${list.map((t,k)=>{const r=(d.alergenos[k]||{}).r, o=(d.alergenos[k]||{}).obs||"";return `<div class="al-row"><div class="small">${k+1}. ${esc(t)}</div>
+    <div class="seg" data-al="${k}">${[["C","Cumple"],["NC","No cumple"],["NA","N/A"]].map(([a,l])=>`<button data-a="${a}" class="${r===a?"on":""}">${l}</button>`).join("")}</div>
+    <input type="text" data-alobs="${k}" value="${esc(o)}" placeholder="Observaciones (opcional)"></div>`;}).join("")}`;
+}
+function renderDevs(focusLast){
+  const d=S.draft, box=$("#devs");
+  if(!d.desvios.length){box.innerHTML=`<p class="muted small" style="margin-top:0">Sin desvíos registrados.</p>`;return;}
+  box.innerHTML=d.desvios.map((x,k)=>`<div class="dev-row"><select data-k="${k}" data-f="item"><option value="">General</option>${ITEMS.map(i=>`<option value="${i.cod}" ${x.item===i.cod?"selected":""}>${i.cod} ${esc(i.nombre)}</option>`).join("")}</select>
+    <input type="text" data-k="${k}" data-f="texto" value="${esc(x.texto)}" placeholder="Describí el desvío observado"><button class="btn sm danger" data-del="${k}">Quitar</button></div>`).join("");
+  box.oninput=box.onchange=e=>{const t=e.target; if(t.dataset.k!=null) d.desvios[+t.dataset.k][t.dataset.f]=t.value;};
+  box.onclick=e=>{const b=e.target.closest("[data-del]"); if(b){d.desvios.splice(+b.dataset.del,1); renderDevs();}};
+  if(focusLast){ const ins=box.querySelectorAll('input[data-f="texto"]'); ins[ins.length-1]?.focus(); }
+}
+function updateTotals(){
+  const d=S.draft; CATS.forEach(c=>{const el=$(`[data-cat="${c.n}"]`); if(el) el.textContent=pct(catScore(d.scores,c.n));});
+  $("#gen").textContent=pct(genScore(d.scores));
+  $("#evalc").textContent=`· ${Object.keys(d.scores).length}/${ITEMS.length} ítems evaluados`;
+}
+async function onSave(){
+  const d=S.draft;
+  if(!d.fecha||!d.sector||!d.responsable.trim()){ toast("Completá fecha, sector y responsable.",true); return; }
+  if(!Object.keys(d.scores).length){ toast("Evaluá al menos un ítem.",true); return; }
+  d.desvios=d.desvios.filter(x=>x.texto.trim()).map(x=>({...x,id:x.id||("d"+Date.now().toString(36)+Math.random().toString(36).slice(2,6))}));
+  const btn=$("#save"); btn.disabled=true; btn.textContent="Guardando…";
+  try{
+    const id=await saveRec({...d,id:S.editingId||undefined});
+    toast("Recorrida guardada ✓");
+    const savedId=id; S.draft=null; S.editingId=null;
+    modal(`<p><b>Recorrida guardada.</b><br><span class="muted small">${esc(secName(d.sector))} · ${fdate(d.fecha)} · Puntaje general ${pct(genScore(d.scores))}</span></p>`,
+      [{label:"Cargar otra",fn:()=>go("nueva")},{label:"Descargar registro PDF",cls:"primary",fn:()=>{pdfRecorrida({...d,id:savedId}); go("historial");}}]);
+    render();
+  }catch(e){ btn.disabled=false; btn.textContent="Guardar recorrida";
+    toast("No se pudo guardar en la planilla. Revisá la conexión y probá de nuevo.",true); }
+}
+
+/* ---------- Historial ---------- */
+function renderHist(app,banner){
+  const list=S.recs.filter(r=>(!S.f.hSector||r.sector===S.f.hSector)&&(!S.f.hMes||recMonth(r)===S.f.hMes)).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||""));
+  app.innerHTML=`${banner}<div class="toolbar"><div><h1>Recorridas registradas</h1><div class="muted small">${S.recs.length} recorridas en total</div></div>
+    <button class="btn" id="xls-all">⬇ Exportar Excel</button></div>
+  <div class="card"><div class="row" style="margin-bottom:14px">
+    <div class="field"><label>Sector</label><select id="h-sec"><option value="">Todos</option>${SECTORES.map(s=>`<option value="${s.id}" ${S.f.hSector===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</select></div>
+    <div class="field"><label>Mes</label><input type="month" id="h-mes" value="${esc(S.f.hMes)}"></div>
+    <div class="field" style="flex:0"><button class="btn" id="h-clr">Quitar filtros</button></div></div>
+  ${list.length?`<div class="tbl-wrap"><table class="t"><thead><tr><th>Fecha</th><th>Turno</th><th>Sector</th><th>Responsable</th><th class="n">Puntaje</th><th class="n">Desvíos</th><th></th></tr></thead><tbody>
+  ${list.map(r=>`<tr><td>${fdate(r.fecha)}</td><td>${esc(r.turno||"")}</td><td>${esc(secName(r.sector))}</td><td>${r.origen==="planilla"?`<span class="pill imp">Importada de planilla</span>`:esc(r.responsable)}</td>
+    <td class="n ${cls(genScore(r.scores||{}))}">${pct(genScore(r.scores||{}))}</td><td class="n">${(r.desvios||[]).length}</td>
+    <td style="white-space:nowrap;text-align:right"><button class="btn sm" data-pdf="${esc(r.id)}">PDF</button> <button class="btn sm" data-edit="${esc(r.id)}" ${S.canWrite===false?"disabled":""}>Editar</button> <button class="btn sm danger" data-delr="${esc(r.id)}" ${S.canWrite===false?"disabled":""}>Eliminar</button></td></tr>`).join("")}
+  </tbody></table></div>`:`<div class="empty">No hay recorridas para este filtro.</div>`}</div>`;
+  $("#h-sec").onchange=e=>{S.f.hSector=e.target.value;render();};
+  $("#h-mes").onchange=e=>{S.f.hMes=e.target.value;render();};
+  $("#h-clr").onclick=()=>{S.f.hSector="";S.f.hMes="";render();};
+  $("#xls-all").onclick=()=>xlsAll(list);
+  app.querySelector("table")?.addEventListener("click",e=>{
+    const p=e.target.closest("[data-pdf]"), ed=e.target.closest("[data-edit]"), del=e.target.closest("[data-delr]");
+    const find=id=>S.recs.find(r=>r.id===id);
+    if(p) pdfRecorrida(find(p.dataset.pdf));
+    if(ed){ const r=find(ed.dataset.edit); S.draft=JSON.parse(JSON.stringify({...newDraft(),...r})); delete S.draft.id; S.draft.desvios=(S.draft.desvios||[]).map((x,k)=>({...x,id:x.id||("i"+k)})); S.editingId=r.id; S.view="nueva"; render(); window.scrollTo(0,0); }
+    if(del){ const r=find(del.dataset.delr); modal(`<p>¿Eliminar la recorrida de <b>${esc(secName(r.sector))}</b> del ${fdate(r.fecha)}? No se puede deshacer.</p>`,
+      [{label:"Cancelar"},{label:"Eliminar",cls:"danger",fn:async()=>{try{await deleteRec(r.id);toast("Recorrida eliminada");}catch(e){toast("No se pudo eliminar.",true);}}}]); }
+  });
+}
+
+/* ---------- Reporte mensual por sector ---------- */
+function sectorSelect(id,val){return `<select id="${id}">${SECTORES.map(s=>`<option value="${s.id}" ${val===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</select>`;}
+function yearOptions(sel){const ys=new Set(S.recs.map(r=>+(r.fecha||"").slice(0,4)).filter(Boolean));ys.add(+today().slice(0,4));return [...ys].sort().map(y=>`<option ${y===sel?"selected":""}>${y}</option>`).join("");}
+function renderMensual(app,banner){
+  const sec=S.f.sector, m=S.f.mes, [y,mm]=m.split("-").map(Number);
+  const recs=recsOf(sec,m), ag=aggregate(recs);
+  const title=`${secName(sec).toUpperCase()} – ${MESES[mm-1].toUpperCase()} ${y}`;
+  const prevYM = mm===1?ym(y-1,12):ym(y,mm-1); const prev=aggregate(recsOf(sec,prevYM));
+  const AD=Object.fromEntries(allDesvios().map(x=>[x.key,x])); const devs=recs.flatMap(r=>(r.desvios||[]).map((x,k)=>({...x,fecha:r.fecha,est:AD[r.id+"~"+(x.id||"i"+k)]})));
+  const dest=recs.filter(r=>(r.destacar||"").trim()).map(r=>({fecha:r.fecha,t:r.destacar.trim()}));
+  let worst=null; if(ag) ag.cats.forEach((v,k)=>{if(v!=null&&(worst==null||v<ag.cats[worst]))worst=k;});
+  app.innerHTML=`${banner}<div class="toolbar"><div><h1>Reporte mensual por sector</h1><div class="muted small">Equivale a la solapa “Carga de datos” de cada sector</div></div>
+   <div class="row"><button class="btn" id="m-xls" ${ag?"":"disabled"}>⬇ Excel</button><button class="btn primary" id="m-pdf" ${ag?"":"disabled"}>⬇ PDF</button></div></div>
+  <div class="card"><div class="row"><div class="field" style="flex:2">${'<label>Sector</label>'+sectorSelect("m-sec",sec)}</div><div class="field"><label>Mes</label><input type="month" id="m-mes" value="${m}"></div></div></div>
+  ${!ag?`<div class="card empty">No hay recorridas de ${esc(secName(sec))} en ${MESES[mm-1]} ${y}.</div>`:`
+  <div class="kpis">
+    <div class="kpi"><div class="k">Puntaje general del mes</div><div class="v">${pct(ag.gen)}</div><div class="d">${prev?`Mes anterior: ${pct(prev.gen)} (${ag.gen>=prev.gen?"▲":"▼"} ${pct(Math.abs(ag.gen-prev.gen))})`:"Sin datos del mes anterior"}</div></div>
+    <div class="kpi"><div class="k">Recorridas realizadas</div><div class="v">${recs.length}</div><div class="d">${recs.map(r=>fdate(r.fecha).slice(0,5)).join(" · ")}</div></div>
+    <div class="kpi"><div class="k">Categoría más baja</div><div class="v" style="font-size:20px;margin-top:8px">${worst!=null?esc(CATS[worst].nombre):"—"}</div><div class="d">${worst!=null?pct(ag.cats[worst]):""}</div></div>
+    <div class="kpi"><div class="k">Desvíos registrados</div><div class="v">${devs.length}</div><div class="d">en el mes</div></div>
+  </div>
+  <div class="card"><h2>${esc(title)}</h2><div class="chart-box"><canvas id="ch-m"></canvas></div><div class="legend-note">Cumplimiento por categoría en cada recorrida del mes (% sobre el máximo de 9 puntos por ítem).</div></div>
+  <div class="card"><h2>Resultados por categoría</h2><div class="tbl-wrap"><table class="t"><thead><tr><th>Categoría</th>${recs.map(r=>`<th class="n">${fdate(r.fecha).slice(0,5)}${r.turno?" "+esc(r.turno):""}</th>`).join("")}<th class="n">Total mes</th></tr></thead><tbody>
+    ${CATS.map((c,k)=>`<tr><td>${c.n}. ${esc(c.nombre)}</td>${recs.map(r=>{const v=catScore(r.scores,c.n);return `<td class="n ${cls(v)}">${pct(v)}</td>`;}).join("")}<td class="n ${cls(ag.cats[k])}"><b>${pct(ag.cats[k])}</b></td></tr>`).join("")}
+    <tr class="tot"><td>PUNTAJE GENERAL</td>${recs.map(r=>`<td class="n">${pct(genScore(r.scores))}</td>`).join("")}<td class="n">${pct(ag.gen)}</td></tr></tbody></table></div>
+    <div class="legend-note">Fondo rojo: menor a 75 % · fondo amarillo: 75–90 %</div></div>
+  <div class="grid2"><div class="card"><h2>Desvíos del mes</h2>${devs.length?`<ul class="list">${devs.map(x=>`<li><b>${fdate(x.fecha).slice(0,5)}</b>${x.est&&x.est.item?` · <span class="pill">${esc(x.est.item)}</span>`:""} ${esc(x.texto)} ${x.est?estPill(x.est.estado,x.est.vencida):""}</li>`).join("")}</ul>`:`<p class="muted">Sin desvíos registrados.</p>`}</div>
+  <div class="card"><h2>Puntos a destacar</h2>${dest.length?`<ul class="list">${dest.map(x=>`<li><b>${fdate(x.fecha).slice(0,5)}</b> ${esc(x.t)}</li>`).join("")}</ul>`:`<p class="muted">Sin puntos a destacar.</p>`}</div></div>`}`;
+  $("#m-sec").onchange=e=>{S.f.sector=e.target.value;render();};
+  $("#m-mes").onchange=e=>{if(e.target.value){S.f.mes=e.target.value;render();}};
+  if(!ag) return;
+  mkChart("ch-m",{type:"bar",data:{labels:CATS.map(c=>wrapLabel(c.nombre)),datasets:recs.map((r,k)=>({label:fdate(r.fecha)+(r.turno?" "+r.turno:""),data:CATS.map(c=>catScore(r.scores,c.n)),backgroundColor:["#1f2f53","#2a78d6","#7fa9e0","#9aa3b5","#c4cbd8","#4d5d82"][k%6]}))}});
+  $("#m-pdf").onclick=()=>{
+    const doc=new jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+    let y=pdfHeader(doc,"RECORRIDAS DE PLANTA",title);
+    doc.setFontSize(10);doc.setTextColor(25,25,25);doc.text(`Puntaje general del mes: ${pct(ag.gen)}   ·   Recorridas: ${recs.length}   ·   Desvíos: ${devs.length}${prev?`   ·   Mes anterior: ${pct(prev.gen)}`:""}`,14,y);y+=4;
+    y=pdfChart(doc,"ch-m",y,95);
+    doc.autoTable({...AT,startY:y,head:[["Categoría",...recs.map(r=>fdate(r.fecha)+(r.turno?" "+r.turno:"")),"Total mes"]],
+      body:[...CATS.map((c,k)=>[`${c.n}. ${c.nombre}`,...recs.map(r=>pct(catScore(r.scores,c.n))),pct(ag.cats[k])]),["PUNTAJE GENERAL",...recs.map(r=>pct(genScore(r.scores))),pct(ag.gen)]],
+      didParseCell:h=>{if(h.section==="body"&&h.row.index===CATS.length){h.cell.styles.fontStyle="bold";} if(h.section==="body"&&h.column.index>0)h.cell.styles.halign="right";}});
+    y=lastY(doc); y=pdfSection(doc,"ÚLTIMOS DESVÍOS",y);
+    doc.autoTable({...AT,startY:y,head:[["Fecha","Ítem","Desvío","Estado"]],body:devs.length?devs.map(x=>[fdate(x.fecha),(x.est&&x.est.item)||"General",x.texto,x.est?x.est.estado:""]):[["","","Sin desvíos registrados",""]],columnStyles:{0:{cellWidth:24},1:{cellWidth:18},3:{cellWidth:30}}});
+    y=lastY(doc); y=pdfSection(doc,"PUNTOS A DESTACAR",y);
+    doc.autoTable({...AT,startY:y,head:[["Fecha","Detalle"]],body:dest.length?dest.map(x=>[fdate(x.fecha),x.t]):[["","Sin puntos a destacar"]],columnStyles:{0:{cellWidth:24}}});
+    pdfFooter(doc); saveFile(`Recorrida_${sec}_${m}.pdf`,doc.output("blob"));
+  };
+  $("#m-xls").onclick=()=>{
+    const wb=XLSX.utils.book_new();
+    const rows=[[title],[],["Ítem",...recs.map(r=>fdate(r.fecha)+(r.turno?" "+r.turno:"")),"Total mes"]];
+    CATS.forEach((c,k)=>{c.items.forEach(([cod,nom])=>rows.push([`${cod} ${nom}`,...recs.map(r=>r.scores[cod]??""),ag.items[cod]!=null?Math.round(ag.items[cod]*100)/100:""]));
+      rows.push([c.nombre.toUpperCase(),...recs.map(r=>pctX(catScore(r.scores,c.n))),pctX(ag.cats[k])]);});
+    rows.push(["PUNTAJE GENERAL",...recs.map(r=>pctX(genScore(r.scores))),pctX(ag.gen)]);
+    const ws=XLSX.utils.aoa_to_sheet(rows); ws["!cols"]=[{wch:48},...recs.map(()=>({wch:12})),{wch:12}];
+    fmtPct(ws, rows, r=>!/^\d\.[a-d]/.test(String(r[0]||"")) && rows.indexOf(r)>2);
+    XLSX.utils.book_append_sheet(wb,ws,"Resultados");
+    const ws2=XLSX.utils.aoa_to_sheet([["Fecha","Ítem","Desvío"],...devs.map(x=>[fdate(x.fecha),x.item||"General",x.texto]),[],["PUNTOS A DESTACAR"],...dest.map(x=>[fdate(x.fecha),"",x.t])]); ws2["!cols"]=[{wch:12},{wch:10},{wch:90}];
+    XLSX.utils.book_append_sheet(wb,ws2,"Desvíos y destacados");
+    saveFile(`Recorrida_${sec}_${m}.xlsx`,new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})]));
+  };
+}
+function fmtPct(ws,rows,isPctRow,firstCol=1){
+  rows.forEach((r,ri)=>{ if(!isPctRow(r,ri)) return; for(let ci=firstCol;ci<r.length;ci++){const a=XLSX.utils.encode_cell({r:ri,c:ci}); if(ws[a]&&typeof ws[a].v==="number") ws[a].z="0.0%";}});
+}
+
+/* ---------- Reporte anual por sector ---------- */
+function renderAnual(app,banner){
+  const sec=S.f.sector, y=S.f.anio, data=sectorYear(sec,y);
+  const has=data.some(Boolean);
+  const title=`${secName(sec).toUpperCase()} – ${y}`;
+  const months=data.map((d,i)=>d?i:null).filter(i=>i!=null);
+  const yearAg=aggregate(S.recs.filter(r=>r.sector===sec&&(r.fecha||"").startsWith(y+"")));
+  app.innerHTML=`${banner}<div class="toolbar"><div><h1>Reporte anual por sector</h1><div class="muted small">Resumen mensual del sector (tabla “RESUMEN” de la planilla)</div></div>
+   <div class="row"><button class="btn" id="a-xls" ${has?"":"disabled"}>⬇ Excel</button><button class="btn primary" id="a-pdf" ${has?"":"disabled"}>⬇ PDF</button></div></div>
+  <div class="card"><div class="row"><div class="field" style="flex:2"><label>Sector</label>${sectorSelect("a-sec",sec)}</div><div class="field"><label>Año</label><select id="a-anio">${yearOptions(y)}</select></div></div></div>
+  ${!has?`<div class="card empty">No hay recorridas de ${esc(secName(sec))} en ${y}.</div>`:`
+  <div class="kpis"><div class="kpi"><div class="k">Puntaje general ${y}</div><div class="v">${pct(yearAg.gen)}</div><div class="d">${yearAg.n} recorridas</div></div>
+   <div class="kpi"><div class="k">Mejor mes</div><div class="v" style="font-size:22px;margin-top:6px">${(()=>{let b=months[0];months.forEach(i=>{if(data[i].gen>data[b].gen)b=i;});return MESES[b]+" · "+pct(data[b].gen);})()}</div></div>
+   <div class="kpi"><div class="k">Mes más bajo</div><div class="v" style="font-size:22px;margin-top:6px">${(()=>{let b=months[0];months.forEach(i=>{if(data[i].gen<data[b].gen)b=i;});return MESES[b]+" · "+pct(data[b].gen);})()}</div></div></div>
+  <div class="card"><h2>${esc(title)} · Puntaje general por mes</h2><div class="chart-box"><canvas id="ch-a"></canvas></div></div>
+  <div class="card"><h2>${esc(title)} · Cumplimiento por categoría</h2><div class="chart-box" style="height:380px"><canvas id="ch-a2"></canvas></div><div class="legend-note">Cada barra es un mes con recorridas.</div></div>
+  <div class="card"><h2>Resumen por categoría y mes</h2><div class="tbl-wrap"><table class="t"><thead><tr><th>Categoría</th>${MES3.map(x=>`<th class="n">${x}</th>`).join("")}</tr></thead><tbody>
+   ${CATS.map((c,k)=>`<tr><td>${esc(c.nombre)}</td>${data.map(d=>`<td class="n ${d?cls(d.cats[k]):""}">${d?pct(d.cats[k]):""}</td>`).join("")}</tr>`).join("")}
+   <tr class="tot"><td>PUNTAJE GENERAL</td>${data.map(d=>`<td class="n">${d?pct(d.gen):""}</td>`).join("")}</tr></tbody></table></div><div class="legend-note">Fondo rojo: menor a 75 % · fondo amarillo: 75–90 %</div></div>`}`;
+  $("#a-sec").onchange=e=>{S.f.sector=e.target.value;render();};
+  $("#a-anio").onchange=e=>{S.f.anio=+e.target.value;render();};
+  if(!has) return;
+  mkChart("ch-a",{type:"bar",data:{labels:MES3,datasets:[{label:"Puntaje general",data:data.map(d=>d?d.gen:null),backgroundColor:"#1f2f53"}]},options:{plugins:{legend:{display:false}}}});
+  const monthPal=["#1f2f53","#2a78d6","#7fa9e0","#4d5d82","#9aa3b5","#c4cbd8"];
+  const ms=months.slice(-6);
+  mkChart("ch-a2",{type:"bar",data:{labels:CATS.map(c=>wrapLabel(c.nombre)),datasets:ms.map((i,k)=>({label:MESES[i],data:data[i].cats,backgroundColor:monthPal[k%6]}))}});
+  $("#a-pdf").onclick=()=>{
+    const doc=new jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+    let y0=pdfHeader(doc,"RECORRIDAS DE PLANTA",title);
+    doc.setFontSize(10);doc.setTextColor(25,25,25);doc.text(`Puntaje general del año: ${pct(yearAg.gen)}  ·  ${yearAg.n} recorridas`,14,y0);y0+=4;
+    let yy=pdfChart(doc,"ch-a",y0,70);
+    doc.autoTable({...AT,startY:yy,head:[["Categoría",...MES3]],body:[...CATS.map((c,k)=>[c.nombre,...data.map(d=>d?pct(d.cats[k]):"")]),["PUNTAJE GENERAL",...data.map(d=>d?pct(d.gen):"")]],
+      didParseCell:h=>{if(h.section==="body"&&h.column.index>0)h.cell.styles.halign="right"; if(h.section==="body"&&h.row.index===CATS.length)h.cell.styles.fontStyle="bold";}});
+    doc.addPage(); yy=pdfSection(doc,"Cumplimiento por categoría (últimos meses con datos)",15); pdfChart(doc,"ch-a2",yy+2,150);
+    pdfFooter(doc); saveFile(`Recorridas_${sec}_${y}.pdf`,doc.output("blob"));
+  };
+  $("#a-xls").onclick=()=>{
+    const rows=[[title],[],["Categoría",...MES3],...CATS.map((c,k)=>[c.nombre.toUpperCase(),...data.map(d=>d?pctX(d.cats[k]):"")]),["PUNTAJE GENERAL",...data.map(d=>d?pctX(d.gen):"")]];
+    const ws=XLSX.utils.aoa_to_sheet(rows); ws["!cols"]=[{wch:30},...MES3.map(()=>({wch:9}))]; fmtPct(ws,rows,(r,i)=>i>2);
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Resumen");
+    saveFile(`Recorridas_${sec}_${y}.xlsx`,new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})]));
+  };
+}
+
+/* ---------- Global planta ---------- */
+function renderGlobal(app,banner){
+  const y=S.f.anio;
+  const bySec=SECTORES.map(s=>({s,data:sectorYear(s.id,y)}));
+  const glob=MESES.map((_,i)=>globalMonth(y,i+1));
+  const has=glob.some(Boolean);
+  const lastM=(()=>{for(let i=11;i>=0;i--) if(glob[i]) return i; return null;})();
+  app.innerHTML=`${banner}<div class="toolbar"><div><h1>Global planta</h1><div class="muted small">Equivale a la solapa “GLOBAL”: todos los sectores</div></div>
+   <div class="row"><button class="btn" id="g-xls" ${has?"":"disabled"}>⬇ Excel</button><button class="btn primary" id="g-pdf" ${has?"":"disabled"}>⬇ PDF</button></div></div>
+  <div class="card"><div class="row"><div class="field" style="max-width:200px"><label>Año</label><select id="g-anio">${yearOptions(y)}</select></div></div></div>
+  ${!has?`<div class="card empty">No hay recorridas en ${y}.</div>`:`
+  <div class="kpis">${lastM!=null?`<div class="kpi"><div class="k">Planta · ${MESES[lastM]} ${y}</div><div class="v">${pct(glob[lastM].gen)}</div><div class="d">Promedio de ${glob[lastM].nSect} sectores</div></div>`:""}
+   ${bySec.map(({s,data})=>{const d=lastM!=null?data[lastM]:null;return `<div class="kpi"><div class="k">${esc(s.nombre)}</div><div class="v" style="font-size:22px">${d?pct(d.gen):"—"}</div><div class="d">${lastM!=null?MESES[lastM]:""}</div></div>`;}).join("")}</div>
+  <div class="card"><h2>RECORRIDAS DE PLANTA ${y} · Puntaje general por sector</h2><div class="chart-box" style="height:380px"><canvas id="ch-g1"></canvas></div></div>
+  <div class="card"><h2>Cumplimiento de requisitos · promedio de planta por categoría</h2><div class="chart-box" style="height:380px"><canvas id="ch-g2"></canvas></div><div class="legend-note">Promedio de los sectores con recorridas en cada mes. Se muestran los últimos 6 meses con datos.</div></div>
+  <div class="card"><h2>Puntaje general por sector y mes</h2><div class="tbl-wrap"><table class="t"><thead><tr><th>Sector</th>${MES3.map(x=>`<th class="n">${x}</th>`).join("")}</tr></thead><tbody>
+   ${bySec.map(({s,data})=>`<tr><td>${esc(s.nombre)}</td>${data.map(d=>`<td class="n ${d?cls(d.gen):""}">${d?pct(d.gen):""}</td>`).join("")}</tr>`).join("")}
+   <tr class="tot"><td>PLANTA</td>${glob.map(g=>`<td class="n">${g?pct(g.gen):""}</td>`).join("")}</tr></tbody></table></div></div>
+  <div class="card"><h2>Cumplimiento por categoría y mes (planta)</h2><div class="tbl-wrap"><table class="t"><thead><tr><th>Categoría</th>${MES3.map(x=>`<th class="n">${x}</th>`).join("")}</tr></thead><tbody>
+   ${CATS.map((c,k)=>`<tr><td>${esc(c.nombre)}</td>${glob.map(g=>`<td class="n ${g?cls(g.cats[k]):""}">${g?pct(g.cats[k]):""}</td>`).join("")}</tr>`).join("")}
+   <tr class="tot"><td>PUNTAJE GENERAL</td>${glob.map(g=>`<td class="n">${g?pct(g.gen):""}</td>`).join("")}</tr></tbody></table></div><div class="legend-note">Fondo rojo: menor a 75 % · fondo amarillo: 75–90 %</div></div>`}`;
+  $("#g-anio").onchange=e=>{S.f.anio=+e.target.value;render();};
+  if(!has) return;
+  mkChart("ch-g1",{type:"bar",data:{labels:MES3,datasets:bySec.map(({s,data})=>({label:s.nombre,data:data.map(d=>d?d.gen:null),backgroundColor:SEC_COLOR[s.id]}))},options:{datasets:{bar:{categoryPercentage:.8,barPercentage:.9}}}});
+  const ms=glob.map((g,i)=>g?i:null).filter(i=>i!=null).slice(-6);
+  const pal=["#1f2f53","#2a78d6","#7fa9e0","#4d5d82","#9aa3b5","#c4cbd8"];
+  mkChart("ch-g2",{type:"bar",data:{labels:CATS.map(c=>wrapLabel(c.nombre)),datasets:ms.map((i,k)=>({label:MESES[i],data:glob[i].cats,backgroundColor:pal[k%6]}))}});
+  $("#g-pdf").onclick=()=>{
+    const doc=new jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+    let yy=pdfHeader(doc,"RECORRIDAS DE PLANTA",`GLOBAL PLANTA – ${y}`);
+    yy=pdfChart(doc,"ch-g1",yy,85);
+    doc.autoTable({...AT,startY:yy,head:[["Sector",...MES3]],body:[...bySec.map(({s,data})=>[s.nombre,...data.map(d=>d?pct(d.gen):"")]),["PLANTA",...glob.map(g=>g?pct(g.gen):"")]],
+      didParseCell:h=>{if(h.section==="body"&&h.column.index>0)h.cell.styles.halign="right"; if(h.section==="body"&&h.row.index===SECTORES.length)h.cell.styles.fontStyle="bold";}});
+    doc.addPage(); yy=pdfSection(doc,"CUMPLIMIENTO DE REQUISITOS",15); yy=pdfChart(doc,"ch-g2",yy+2,90);
+    doc.autoTable({...AT,startY:yy,head:[["Categoría",...MES3]],body:[...CATS.map((c,k)=>[c.nombre,...glob.map(g=>g?pct(g.cats[k]):"")]),["PUNTAJE GENERAL",...glob.map(g=>g?pct(g.gen):"")]],
+      didParseCell:h=>{if(h.section==="body"&&h.column.index>0)h.cell.styles.halign="right"; if(h.section==="body"&&h.row.index===CATS.length)h.cell.styles.fontStyle="bold";}});
+    pdfFooter(doc); saveFile(`Recorridas_GLOBAL_${y}.pdf`,doc.output("blob"));
+  };
+  $("#g-xls").onclick=()=>{
+    const wb=XLSX.utils.book_new();
+    const r1=[[`RECORRIDAS DE PLANTA ${y} – Puntaje general por sector`],[],["Sector",...MES3],...bySec.map(({s,data})=>[s.nombre,...data.map(d=>d?pctX(d.gen):"")]),["PLANTA",...glob.map(g=>g?pctX(g.gen):"")]];
+    const w1=XLSX.utils.aoa_to_sheet(r1); w1["!cols"]=[{wch:42},...MES3.map(()=>({wch:9}))]; fmtPct(w1,r1,(r,i)=>i>2); XLSX.utils.book_append_sheet(wb,w1,"Por sector");
+    const r2=[[`Cumplimiento de requisitos ${y} – promedio de planta`],[],["Categoría",...MES3],...CATS.map((c,k)=>[c.nombre.toUpperCase(),...glob.map(g=>g?pctX(g.cats[k]):"")]),["PUNTAJE GENERAL",...glob.map(g=>g?pctX(g.gen):"")]];
+    const w2=XLSX.utils.aoa_to_sheet(r2); w2["!cols"]=[{wch:30},...MES3.map(()=>({wch:9}))]; fmtPct(w2,r2,(r,i)=>i>2); XLSX.utils.book_append_sheet(wb,w2,"Por categoría");
+    bySec.forEach(({s,data})=>{const r=[[s.nombre.toUpperCase()+" – "+y],[],["Categoría",...MES3],...CATS.map((c,k)=>[c.nombre.toUpperCase(),...data.map(d=>d?pctX(d.cats[k]):"")]),["PUNTAJE GENERAL",...data.map(d=>d?pctX(d.gen):"")]];
+      const w=XLSX.utils.aoa_to_sheet(r); w["!cols"]=[{wch:30},...MES3.map(()=>({wch:9}))]; fmtPct(w,r,(rr,i)=>i>2); XLSX.utils.book_append_sheet(wb,w,s.id);});
+    saveFile(`Recorridas_GLOBAL_${y}.xlsx`,new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})]));
+  };
+}
+
+/* ---------- PDF registro individual (R-P-CA-002.10) ---------- */
+function pdfRecorrida(r){
+  if(!r) return;
+  const doc=new jspdf.jsPDF({unit:"mm",format:"a4"}); const W=doc.internal.pageSize.getWidth();
+  doc.autoTable({...AT,startY:10,theme:"grid",body:[[{content:"",rowSpan:3,styles:{minCellWidth:50}},{content:"RECORRIDAS DE PLANTA",rowSpan:3,styles:{halign:"center",valign:"middle",fontSize:14,fontStyle:"bold",textColor:[31,47,83]}},`Revisión: ${FORM.revision}`],[`Fecha: ${FORM.fecha}`],[FORM.codigo]],
+    columnStyles:{0:{cellWidth:52},2:{cellWidth:40,fontSize:8.5}},styles:{...AT.styles,minCellHeight:6},
+});
+  { const th=doc.lastAutoTable.finalY-10, w=44, hh=w/LOGO_RATIO; doc.addImage(LOGO,"JPEG",18,10+(th-hh)/2,w,hh); }
+  doc.autoTable({...AT,startY:lastY(doc)-3,body:[[{content:"Fecha:",styles:{fontStyle:"bold"}},fdate(r.fecha),{content:"Turno:",styles:{fontStyle:"bold"}},r.turno||"—"],[{content:"Sector:",styles:{fontStyle:"bold"}},secName(r.sector),{content:"Responsable recorrida:",styles:{fontStyle:"bold"}},r.origen==="planilla"?"(importada de planilla)":r.responsable]],columnStyles:{0:{cellWidth:22},2:{cellWidth:40}}});
+  const body=[];
+  CATS.forEach(c=>{ body.push([{content:`${c.n}. ${c.nombre.toUpperCase()}`,colSpan:2,styles:{fillColor:[232,236,244],fontStyle:"bold",textColor:[31,47,83]}},{content:pct(catScore(r.scores,c.n)),styles:{fillColor:[232,236,244],fontStyle:"bold",halign:"right",textColor:[31,47,83]}}]);
+    c.items.forEach(([cod,nom])=>body.push([`${cod}. ${nom}`,{content:r.scores?.[cod]!=null?String(r.scores[cod]):"N/E",styles:{halign:"center"}},""])); });
+  body.push([{content:"PUNTAJE GENERAL",colSpan:2,styles:{fontStyle:"bold"}},{content:pct(genScore(r.scores||{})),styles:{fontStyle:"bold",halign:"right"}}]);
+  doc.autoTable({...AT,startY:lastY(doc)-3,head:[["Ítem","Puntaje","% categoría"]],body,columnStyles:{1:{cellWidth:22},2:{cellWidth:28}}});
+  let y=lastY(doc);
+  const sec=SECTORES.find(s=>s.id===r.sector); const al=r.alergenos||{};
+  if(sec&&Object.keys(al).length){ y=pdfSection(doc,"CHECKLIST GESTIÓN DE ALÉRGENOS",y);
+    const L={C:"Cumple",NC:"No cumple",NA:"N/A"};
+    doc.autoTable({...AT,startY:y,head:[["Requisito","Resultado","Observaciones"]],body:ALERGENOS[sec.al].map((t,k)=>[t,L[(al[k]||{}).r]||"—",(al[k]||{}).obs||""]),columnStyles:{1:{cellWidth:22},2:{cellWidth:45}}}); y=lastY(doc); }
+  y=pdfSection(doc,"DETALLE DE DESVÍOS",y);
+  doc.autoTable({...AT,startY:y,head:[["Ítem","Desvío"]],body:(r.desvios||[]).length?r.desvios.map(x=>[x.item||"General",x.texto]):[["","Sin desvíos"]],columnStyles:{0:{cellWidth:20}}}); y=lastY(doc);
+  y=pdfSection(doc,"PUNTOS A DESTACAR",y);
+  doc.autoTable({...AT,startY:y,body:[[r.destacar||"—"]]}); y=lastY(doc);
+  doc.setFontSize(7.5); doc.setTextColor(90,90,90); doc.text(doc.splitTextToSize(PUNTAJE_TXT,W-28),14,Math.min(y,doc.internal.pageSize.getHeight()-16));
+  pdfFooter(doc); saveFile(`Recorrida_${r.sector}_${r.fecha}.pdf`,doc.output("blob"));
+}
+
+/* ---------- Excel con todas las recorridas (base de datos) ---------- */
+function xlsAll(list){
+  const head=["Fecha","Turno","Sector","Responsable",...ITEMS.map(i=>i.cod),...CATS.map(c=>c.nombre),"Puntaje general","Desvíos","Puntos a destacar"];
+  const rows=[head,...list.slice().reverse().map(r=>[fdate(r.fecha),r.turno||"",secName(r.sector),r.origen==="planilla"?"(planilla)":r.responsable,...ITEMS.map(i=>r.scores?.[i.cod]??""),...CATS.map(c=>pctX(catScore(r.scores||{},c.n))),pctX(genScore(r.scores||{})),(r.desvios||[]).map(x=>(x.item?x.item+": ":"")+x.texto).join(" | "),r.destacar||""])];
+  const ws=XLSX.utils.aoa_to_sheet(rows); const first=4+ITEMS.length;
+  rows.forEach((row,ri)=>{if(!ri)return; for(let ci=first;ci<first+CATS.length+1;ci++){const a=XLSX.utils.encode_cell({r:ri,c:ci}); if(ws[a]&&typeof ws[a].v==="number") ws[a].z="0.0%";}});
+  ws["!cols"]=[{wch:11},{wch:6},{wch:34},{wch:14},...ITEMS.map(()=>({wch:5})),...CATS.map(()=>({wch:12})),{wch:12},{wch:60},{wch:40}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Recorridas");
+  saveFile(`Recorridas_Aromitalia_${today()}.xlsx`,new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})]));
+}
+
+/* ---------- Desvíos / Registro Único de No Conformidades ---------- */
+const ESTADOS = ["Abierta","En análisis","En tratamiento","Reabierta","Cerrada"];
+const EST_CLS = {"Abierta":"st-open","En análisis":"st-an","En tratamiento":"st-tr","Reabierta":"st-re","Cerrada":"st-ok"};
+const METODOS = ["5 Porqués","Diagrama de Ishikawa","Lluvia de ideas","Otro"];
+// Clasificación automática de desvíos sin ítem asignado (se puede corregir a mano)
+const AUTO = [
+  [/al[eé]rgen|etiqueta naranja|sticker naranja/i,"8.a"],
+  [/cucarach|mosca|mosquit|insect|plaga|estaci[oó]n( de monitoreo)?|roedor|cebo/i,"7.b"],
+  [/port[oó]n|puerta.*abiert|cortina/i,"7.c"],
+  [/poes/i,"1.b"],
+  [/mantenim|desperfect|roto|rota|rotos|picad|perdida de aceite|no funciona|z[oó]calo|humedad|gotera|charco/i,"5.b"],
+  [/arregl|provisori|papel.*arregl/i,"5.c"],
+  [/barbijo|cofia|cubre ?barba|epp|guante|protecci[oó]n auditiva|barba/i,"2.b"],
+  [/uniforme|ropa/i,"2.a"],
+  [/vencid|lote/i,"4.c"],
+  [/trazab|vale de consumo|vales/i,"4.b"],
+  [/objeto extra|tornillo|ganchito|pala blanca|procedimiento|instructivo/i,"4.a"],
+  [/planilla|registro|tachadura|enmienda/i,"6.a"],
+  [/utensil|herramient|balde|pala|escoba|esponja|equipo.*suci|trituradora|bomba|balanza/i,"1.c"],
+  [/desorden|orden|caja|palet|cart[oó]n|film|strich|pasillo/i,"1.a"],
+  [/suci|limpieza|rejilla|regilla|desag|piso|pared|polvo|desecho/i,"1.d"],
+  [/capacit|conocimiento|no sab[ií]a/i,"3.a"]
+];
+function autoItem(t){ const m=/^\s*(\d)\s*\.?\s*([a-d])\b/i.exec(t||""); if(m && ITEM[m[1]+"."+m[2].toLowerCase()]) return m[1]+"."+m[2].toLowerCase(); for(const [re,c] of AUTO) if(re.test(t||"")) return c; return ""; }
+function estadoDe(t){
+  if(!t||!t.tipo) return "Abierta";
+  if(t.tipo==="inmediata") return (t.correccion||"").trim()?"Cerrada":"Abierta";
+  if(t.eficacia==="Eficaz") return "Cerrada";
+  if(t.eficacia==="No eficaz") return "Reabierta";
+  if((t.acciones||[]).some(a=>(a.actividad||"").trim())) return "En tratamiento";
+  if((t.causa||"").trim()||(t.analisis||"").trim()) return "En análisis";
+  return "Abierta";
+}
+function allDesvios(){
+  const out=[];
+  S.recs.forEach(r=>(r.desvios||[]).forEach((d,k)=>{
+    const id=d.id||("i"+k), key=r.id+"~"+id, t=S.trat[key]||null;
+    const manual=(t&&t.item)||d.item||""; const auto=manual?"":autoItem(d.texto);
+    const item=manual||auto, est=estadoDe(t);
+    const pend=(t&&t.tipo==="nc")?(t.acciones||[]).filter(a=>a.estado!=="Realizada"&&a.fecha):[];
+    const venc=est!=="Cerrada"&&pend.some(a=>a.fecha<today());
+    const comp=(t&&t.acciones||[]).map(a=>a.fecha).filter(Boolean).sort().pop()||"";
+    out.push({key,recId:r.id,fecha:r.fecha,sector:r.sector,responsableRec:r.responsable,texto:d.texto,item,auto:!!auto,cat:item?ITEM[item].cat:null,t,estado:est,vencida:venc,compromiso:comp});
+  }));
+  out.sort((a,b)=>(a.fecha+a.key).localeCompare(b.fecha+b.key));
+  const cnt={}; out.forEach(d=>{const y=(d.fecha||"").slice(0,4); cnt[y]=(cnt[y]||0)+1; d.nro=`D-${y}-${String(cnt[y]).padStart(3,"0")}`;});
+  return out;
+}
+const catLabel = d=> d.item?`${d.item} ${ITEM[d.item].nombre}`:"Sin clasificar";
+const estPill = (e,v)=>`<span class="pill ${EST_CLS[e]}">${e}</span>${v?` <span class="pill st-venc">Vencida</span>`:""}`;
+
+function renderDesvios(app,banner){
+  if(S.dEdit) return renderTrat(app,banner);
+  const F=S.f.d; const all=allDesvios();
+  const list=all.filter(d=>(d.fecha||"").startsWith(F.anio+"")&&(!F.mes||d.fecha.slice(5,7)===F.mes)&&(!F.sector||d.sector===F.sector)&&(!F.cat||String(d.cat)===F.cat)&&
+    (!F.estado||(F.estado==="abiertas"?d.estado!=="Cerrada":F.estado==="vencidas"?d.vencida:d.estado===F.estado))&&(!F.q||(d.texto+" "+catLabel(d)).toLowerCase().includes(F.q.toLowerCase())));
+  const abiertas=list.filter(d=>d.estado!=="Cerrada").length, cerradas=list.length-abiertas, venc=list.filter(d=>d.vencida).length;
+  const sinTrat=list.filter(d=>!d.t||!d.t.tipo).length;
+  app.innerHTML=`${banner}<div class="toolbar"><div><h1>Desvíos y no conformidades</h1><div class="muted small">Registro Único de No Conformidades · desvíos detectados en recorridas de planta</div></div>
+    <div class="row"><button class="btn" id="d-xls" ${list.length?"":"disabled"}>⬇ Excel (Registro Único)</button><button class="btn primary" id="d-pdf" ${list.length?"":"disabled"}>⬇ PDF</button></div></div>
+  <div class="card"><div class="row">
+    <div class="field" style="max-width:110px"><label>Año</label><select id="df-anio">${yearOptions(F.anio)}</select></div>
+    <div class="field" style="max-width:150px"><label>Mes</label><select id="df-mes"><option value="">Todos</option>${MESES.map((m,i)=>{const v=String(i+1).padStart(2,"0");return `<option value="${v}" ${F.mes===v?"selected":""}>${m}</option>`;}).join("")}</select></div>
+    <div class="field"><label>Sector</label><select id="df-sec"><option value="">Todos</option>${SECTORES.map(s=>`<option value="${s.id}" ${F.sector===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</select></div>
+    <div class="field"><label>Categoría</label><select id="df-cat"><option value="">Todas</option>${CATS.map(c=>`<option value="${c.n}" ${F.cat===String(c.n)?"selected":""}>${c.n}. ${esc(c.nombre)}</option>`).join("")}<option value="null" ${F.cat==="null"?"selected":""}>Sin clasificar</option></select></div>
+    <div class="field"><label>Estado</label><select id="df-est"><option value="">Todos</option><option value="abiertas" ${F.estado==="abiertas"?"selected":""}>Todas las abiertas</option><option value="vencidas" ${F.estado==="vencidas"?"selected":""}>Vencidas</option>${ESTADOS.map(e=>`<option ${F.estado===e?"selected":""}>${e}</option>`).join("")}</select></div>
+    <div class="field" style="flex:2"><label>Buscar</label><input type="text" id="df-q" value="${esc(F.q)}" placeholder="Texto del desvío…"></div>
+  </div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="k">Desvíos</div><div class="v">${list.length}</div><div class="d">${F.mes?MESES[+F.mes-1]+" ":""}${F.anio}</div></div>
+    <div class="kpi"><div class="k">Abiertos</div><div class="v">${abiertas}</div><div class="d">${sinTrat} sin tratamiento asignado</div></div>
+    <div class="kpi"><div class="k">Cerrados</div><div class="v">${cerradas}</div><div class="d">${list.length?pct(cerradas/list.length)+" de cierre":"—"}</div></div>
+    <div class="kpi"><div class="k">Acciones vencidas</div><div class="v" style="${venc?"color:var(--bad)":""}">${venc}</div><div class="d">fecha compromiso superada</div></div>
+  </div>
+  ${!list.length?`<div class="card empty">No hay desvíos para este filtro.</div>`:`
+  <div class="grid2">
+    <div class="card"><h2>Desvíos por mes y sector</h2><div class="chart-box"><canvas id="ch-d1"></canvas></div></div>
+    <div class="card"><h2>Desvíos por categoría</h2><div class="chart-box"><canvas id="ch-d2"></canvas></div></div>
+  </div>
+  <div class="card"><h2>Resumen por sector</h2><div class="tbl-wrap"><table class="t"><thead><tr><th>Sector</th><th class="n">Desvíos</th><th class="n">Abiertos</th><th class="n">Cerrados</th><th class="n">Vencidos</th><th>Categoría más frecuente</th></tr></thead><tbody>
+    ${SECTORES.map(s=>{const l=list.filter(d=>d.sector===s.id); if(!l.length) return ""; const c={}; l.forEach(d=>{const k=d.cat?CATS[d.cat-1].nombre:"Sin clasificar"; c[k]=(c[k]||0)+1;}); const top=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];
+      return `<tr><td>${esc(s.nombre)}</td><td class="n">${l.length}</td><td class="n">${l.filter(d=>d.estado!=="Cerrada").length}</td><td class="n">${l.filter(d=>d.estado==="Cerrada").length}</td><td class="n">${l.filter(d=>d.vencida).length}</td><td>${esc(top[0])} (${top[1]})</td></tr>`;}).join("")}
+  </tbody></table></div></div>
+  <div class="card"><h2>Registro de desvíos <span class="muted small" style="font-weight:400">(${list.length})</span></h2><div class="tbl-wrap"><table class="t" id="d-tbl"><thead><tr><th>Nº</th><th>Fecha</th><th>Sector</th><th>Ítem / motivo</th><th>Descripción</th><th>Estado</th><th>Responsable acción</th><th>Compromiso</th><th></th></tr></thead><tbody>
+  ${list.slice().reverse().slice(0,F.lim||30).map(d=>`<tr><td style="white-space:nowrap">${d.nro}</td><td>${fdate(d.fecha)}</td><td>${esc(secName(d.sector))}</td>
+    <td style="min-width:190px;font-size:13px">${d.item?`<span class="pill">${esc(d.item)}</span> ${esc(ITEM[d.item].nombre)}${d.auto?` <span class="muted small" title="Clasificado automáticamente por el texto; podés corregirlo en Tratar">(auto)</span>`:""}`:`<span class="muted">Sin clasificar</span>`}</td>
+    <td style="min-width:240px">${esc(d.texto)}</td><td style="white-space:nowrap">${estPill(d.estado,d.vencida)}</td><td>${esc([...new Set((d.t?.acciones||[]).map(a=>a.responsable).filter(Boolean))].join(", "))}</td><td>${fdate(d.compromiso)}</td>
+    <td style="white-space:nowrap;text-align:right"><button class="btn sm" data-fpdf="${esc(d.key)}">PDF</button> <button class="btn sm primary" data-trat="${esc(d.key)}">${d.t&&d.t.tipo?"Ver / editar":"Tratar"}</button></td></tr>`).join("")}
+  </tbody></table></div>${list.length>(F.lim||30)?`<div style="text-align:center;margin-top:12px"><button class="btn" id="d-more">Ver más (${list.length-(F.lim||30)} restantes)</button></div>`:""}<div class="legend-note">“(auto)”: categoría asignada automáticamente a partir del texto del desvío (los importados de la planilla no tenían ítem). Se corrige desde “Tratar”.</div></div>`}`;
+  const set=(k,v)=>{F[k]=v;F.lim=30;render();};
+  $("#df-anio").onchange=e=>set("anio",+e.target.value); $("#df-mes").onchange=e=>set("mes",e.target.value);
+  $("#df-sec").onchange=e=>set("sector",e.target.value); $("#df-cat").onchange=e=>set("cat",e.target.value); $("#df-est").onchange=e=>set("estado",e.target.value);
+  let qt; $("#df-q").oninput=e=>{clearTimeout(qt); qt=setTimeout(()=>{F.q=e.target.value; render(); const i=$("#df-q"); i.focus(); i.setSelectionRange(i.value.length,i.value.length);},350);};
+  if(!list.length) return;
+  $("#d-tbl").addEventListener("click",e=>{const b=e.target.closest("[data-trat]"); if(b){S.dEdit=b.dataset.trat; render(); window.scrollTo(0,0);} const p=e.target.closest("[data-fpdf]"); if(p) pdfFicha(allDesvios().find(x=>x.key===p.dataset.fpdf));});
+  // gráficos de conteo
+  const cntOpts=(horiz)=>({indexAxis:horiz?"y":"x",plugins:{legend:{display:!horiz,position:"bottom",labels:{boxWidth:12,boxHeight:12,font:{family:"Inter",size:12},color:"#52514e"}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw}`}}},
+    scales:{[horiz?"x":"y"]:{beginAtZero:true,stacked:!horiz,ticks:{precision:0,color:"#86857f",font:{size:11}},grid:{color:"#ecebe6"},border:{display:false}},[horiz?"y":"x"]:{stacked:!horiz,ticks:{color:"#52514e",font:{size:11},autoSkip:false},grid:{display:false}}}});
+  const meses=F.mes?[+F.mes-1]:MESES.map((_,i)=>i);
+  mkChart("ch-d1",{type:"bar",data:{labels:meses.map(i=>MES3[i]),datasets:SECTORES.map(s=>({label:s.nombre,data:meses.map(i=>list.filter(d=>d.sector===s.id&&+d.fecha.slice(5,7)===i+1).length),backgroundColor:SEC_COLOR[s.id],borderRadius:2,borderSkipped:false}))},options:cntOpts(false)});
+  const cats=[...CATS.map(c=>({l:c.nombre,n:list.filter(d=>d.cat===c.n).length})),{l:"Sin clasificar",n:list.filter(d=>!d.cat).length}].filter(x=>x.n).sort((a,b)=>b.n-a.n);
+  mkChart("ch-d2",{type:"bar",data:{labels:cats.map(c=>c.l),datasets:[{label:"Desvíos",data:cats.map(c=>c.n),backgroundColor:"#1f2f53",borderSkipped:"left"}]},options:cntOpts(true)});
+  $("#d-xls").onclick=()=>xlsRegistro(list);
+  if($("#d-more")) $("#d-more").onclick=()=>{F.lim=(F.lim||30)+50; const y=window.scrollY; render(); window.scrollTo(0,y);};
+  $("#d-pdf").onclick=()=>{
+    const doc=new jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+    const per=(F.mes?MESES[+F.mes-1]+" ":"")+F.anio+(F.sector?" · "+secName(F.sector):"");
+    let y=pdfHeader(doc,"DESVÍOS Y NO CONFORMIDADES",per.toUpperCase());
+    doc.setFontSize(10);doc.setTextColor(25,25,25);doc.text(`Desvíos: ${list.length}   ·   Abiertos: ${abiertas}   ·   Cerrados: ${cerradas} (${pct(cerradas/list.length)})   ·   Acciones vencidas: ${venc}`,14,y); y+=5;
+    const W=doc.internal.pageSize.getWidth()-28; const half=(W-6)/2;
+    const img=(id,x,yy)=>{const c=document.getElementById(id);const t=document.createElement("canvas");t.width=c.width;t.height=c.height;const g=t.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,t.width,t.height);g.drawImage(c,0,0);const h=half*c.height/c.width;doc.addImage(t.toDataURL("image/jpeg",.9),"JPEG",x,yy,half,h,undefined,"FAST");return h;};
+    doc.setFont("helvetica","bold");doc.setFontSize(9.5);doc.setTextColor(31,47,83);doc.text("Por mes y sector",14,y+3);doc.text("Por categoría",14+half+6,y+3);
+    const h1=img("ch-d1",14,y+5), h2=img("ch-d2",14+half+6,y+5); y+=Math.max(h1,h2)+9;
+    doc.autoTable({...AT,startY:y,head:[["Nº","Fecha","Sector","Ítem / motivo","Descripción","Estado","Responsable","Compromiso"]],
+      body:list.map(d=>[d.nro,fdate(d.fecha),secName(d.sector),catLabel(d),d.texto,d.estado+(d.vencida?" (vencida)":""),[...new Set((d.t?.acciones||[]).map(a=>a.responsable).filter(Boolean))].join(", "),fdate(d.compromiso)]),
+      columnStyles:{0:{cellWidth:22},1:{cellWidth:20},2:{cellWidth:38},3:{cellWidth:48},5:{cellWidth:26},6:{cellWidth:28},7:{cellWidth:22}}});
+    pdfFooter(doc,"Registro Único de No Conformidades"); saveFile(`Desvios_${F.anio}${F.mes?"-"+F.mes:""}${F.sector?"_"+F.sector:""}.pdf`,doc.output("blob"));
+  };
+}
+
+function renderTrat(app,banner){
+  const d=allDesvios().find(x=>x.key===S.dEdit);
+  if(!d){ S.dEdit=null; return renderDesvios(app,banner); }
+  if(!S.tDraft||S.tDraft._key!==d.key){ S.tDraft=Object.assign({_key:d.key,tipo:"",item:d.t?.item||(d.auto?"":d.item)||"",correccion:"",metodo:"",analisis:"",causa:"",riesgo:"",riesgoId:"",aprobacion:false,aprobadoPor:"",fechaAprobacion:"",acciones:[],eficacia:"Pendiente",fechaVerif:"",verificadoPor:"",obsVerif:"",fechaCierre:""},JSON.parse(JSON.stringify(d.t||{}))); S.tDraft._key=d.key; if(!S.tDraft.item&&d.auto) S.tDraft.item=d.item; }
+  const t=S.tDraft, ro=S.canWrite===false||!S.db;
+  const opt=(arr,v)=>arr.map(o=>`<option ${o===v?"selected":""}>${o}</option>`).join("");
+  app.innerHTML=`${banner}<div class="toolbar"><div><button class="btn sm" id="t-back">← Volver al registro</button>
+    <h1 style="margin-top:10px">${d.nro} · Tratamiento del desvío</h1><div class="muted small">Detectado el ${fdate(d.fecha)} en ${esc(secName(d.sector))} · Recorrida de planta${d.responsableRec?" · "+esc(d.responsableRec):""}</div></div>
+    <div>${estPill(estadoDe(t),d.vencida)}</div></div>
+  <div class="card"><h2>1. Registro</h2>
+    <div class="banner info" style="margin-bottom:12px"><b>Desvío:</b> ${esc(d.texto)}</div>
+    <div class="row"><div class="field" style="flex:2"><label>Ítem / motivo</label><select id="t-item"><option value="">Sin clasificar</option>${ITEMS.map(i=>`<option value="${i.cod}" ${t.item===i.cod?"selected":""}>${i.cod} ${esc(i.nombre)} (${esc(CATS[i.cat-1].nombre)})</option>`).join("")}</select></div>
+    <div class="field" style="flex:2"><label>Tratamiento</label><select id="t-tipo"><option value="">— Elegir —</option><option value="inmediata" ${t.tipo==="inmediata"?"selected":""}>Corrección inmediata (se resolvió en el momento)</option><option value="nc" ${t.tipo==="nc"?"selected":""}>No conformidad: requiere análisis y acción correctiva</option></select></div></div>
+  </div>
+  <div id="t-body"></div>
+  <div class="sticky-save"><div class="muted small">Estado resultante: <b id="t-est">${estadoDe(t)}</b></div><div class="row"><button class="btn" id="t-pdf">⬇ Ficha PDF</button><button class="btn primary" id="t-save" ${ro?"disabled":""}>Guardar tratamiento</button></div></div>`;
+  const body=()=>{
+    const B=$("#t-body");
+    if(t.tipo==="inmediata"){ B.innerHTML=`<div class="card"><h2>Corrección inmediata</h2><div class="row"><div class="field" style="flex:3"><label>Corrección realizada</label><textarea id="t-corr" placeholder="Qué se hizo en el momento para resolverlo">${esc(t.correccion)}</textarea></div>
+      <div class="field"><label>Fecha de cierre</label><input type="date" id="t-fc" value="${esc(t.fechaCierre||d.fecha)}"></div></div>
+      <div class="legend-note">Si el desvío se repite o la corrección no alcanza, cambiá el tratamiento a “No conformidad”.</div></div>`; }
+    else if(t.tipo==="nc"){ B.innerHTML=`
+      <div class="card"><h2>2. Análisis de causas</h2><div class="row"><div class="field" style="max-width:260px"><label>Método</label><select id="t-met"><option value="">—</option>${opt(METODOS,t.metodo)}</select></div></div>
+        <div class="field" style="margin-top:10px"><label>Desarrollo del análisis</label><textarea id="t-an" style="min-height:110px" placeholder="Ej. 5 Porqués: ¿Por qué…? → ¿Por qué…? …">${esc(t.analisis)}</textarea></div>
+        <div class="field" style="margin-top:10px"><label>Causa raíz</label><input type="text" id="t-causa" value="${esc(t.causa)}"></div>
+        <div class="row" style="margin-top:10px"><div class="field" style="max-width:300px"><label>¿Requiere modificar la matriz de riesgos/oportunidades?</label><select id="t-rg"><option value="">—</option>${opt(["Sí","No"],t.riesgo)}</select></div>
+        <div class="field"><label>ID riesgo / oportunidad</label><input type="text" id="t-rid" value="${esc(t.riesgoId)}" placeholder="Para trazabilidad con la matriz"></div></div>
+        <div class="row" style="margin-top:10px"><div class="field" style="max-width:300px"><label>¿Requiere aprobación de Dirección?</label><select id="t-ap"><option value="no" ${!t.aprobacion?"selected":""}>No</option><option value="si" ${t.aprobacion?"selected":""}>Sí</option></select></div>
+        <div class="field ${t.aprobacion?"":"hidden"}" id="t-apf1"><label>Aprobado por</label><input type="text" id="t-apby" value="${esc(t.aprobadoPor)}"></div><div class="field ${t.aprobacion?"":"hidden"}" id="t-apf2"><label>Fecha aprobación</label><input type="date" id="t-apd" value="${esc(t.fechaAprobacion)}"></div></div>
+      </div>
+      <div class="card"><h2>3. Plan de acciones correctivas / preventivas</h2><div id="t-acc"></div><button class="btn sm" id="t-addacc">+ Agregar acción</button></div>
+      <div class="card"><h2>4. Seguimiento y verificación de eficacia</h2><div class="row">
+        <div class="field" style="max-width:220px"><label>Eficacia</label><select id="t-ef">${opt(["Pendiente","Eficaz","No eficaz"],t.eficacia)}</select></div>
+        <div class="field"><label>Fecha verificación</label><input type="date" id="t-fv" value="${esc(t.fechaVerif)}"></div>
+        <div class="field"><label>Verificado por</label><input type="text" id="t-vby" value="${esc(t.verificadoPor)}"></div>
+        <div class="field"><label>Fecha de cierre</label><input type="date" id="t-fc" value="${esc(t.fechaCierre)}"></div></div>
+        <div class="field" style="margin-top:10px"><label>Observaciones del seguimiento</label><textarea id="t-ov">${esc(t.obsVerif)}</textarea></div>
+        <div class="legend-note">Eficaz → la NC queda cerrada. No eficaz → queda reabierta: revisá el análisis y agregá nuevas acciones (procedimiento, punto 5.4).</div></div>`;
+      renderAcc(); }
+    else B.innerHTML=`<div class="card muted">Elegí el tipo de tratamiento para continuar.</div>`;
+    const bind=(id,k,ev="input")=>{const el=$("#"+id); if(el) el.addEventListener(ev,e=>{t[k]=e.target.value; $("#t-est").textContent=estadoDe(t);});};
+    bind("t-corr","correccion"); bind("t-fc","fechaCierre","change"); bind("t-met","metodo","change"); bind("t-an","analisis"); bind("t-causa","causa"); bind("t-rg","riesgo","change"); bind("t-rid","riesgoId");
+    bind("t-apby","aprobadoPor"); bind("t-apd","fechaAprobacion","change"); bind("t-ef","eficacia","change"); bind("t-fv","fechaVerif","change"); bind("t-vby","verificadoPor"); bind("t-ov","obsVerif");
+    const ap=$("#t-ap"); if(ap) ap.onchange=e=>{t.aprobacion=e.target.value==="si"; $("#t-apf1").classList.toggle("hidden",!t.aprobacion); $("#t-apf2").classList.toggle("hidden",!t.aprobacion);};
+    const ef=$("#t-ef"); if(ef) ef.addEventListener("change",e=>{ if(e.target.value==="Eficaz"&&!t.fechaCierre){t.fechaCierre=today(); $("#t-fc").value=t.fechaCierre;} if(e.target.value!=="Eficaz"){t.fechaCierre=""; $("#t-fc").value="";} });
+    const aa=$("#t-addacc"); if(aa) aa.onclick=()=>{t.acciones.push({actividad:"",responsable:"",fecha:"",estado:"Pendiente"}); renderAcc(true); $("#t-est").textContent=estadoDe(t);};
+  };
+  function renderAcc(focus){
+    const box=$("#t-acc");
+    box.innerHTML=t.acciones.length?t.acciones.map((a,k)=>`<div class="acc-row"><input type="text" data-k="${k}" data-f="actividad" value="${esc(a.actividad)}" placeholder="Actividad a realizar">
+      <input type="text" data-k="${k}" data-f="responsable" value="${esc(a.responsable)}" placeholder="Responsable"><input type="date" data-k="${k}" data-f="fecha" value="${esc(a.fecha)}" title="Fecha compromiso">
+      <select data-k="${k}" data-f="estado">${opt(["Pendiente","Realizada"],a.estado)}</select><button class="btn sm danger" data-delacc="${k}">Quitar</button></div>`).join(""):`<p class="muted small" style="margin-top:0">Todavía no hay acciones definidas.</p>`;
+    box.oninput=box.onchange=e=>{const el=e.target; if(el.dataset.k!=null){t.acciones[+el.dataset.k][el.dataset.f]=el.value; $("#t-est").textContent=estadoDe(t);}};
+    box.onclick=e=>{const b=e.target.closest("[data-delacc]"); if(b){t.acciones.splice(+b.dataset.delacc,1); renderAcc(); $("#t-est").textContent=estadoDe(t);}};
+    if(focus){const i=box.querySelectorAll('input[data-f="actividad"]'); i[i.length-1]?.focus();}
+  }
+  body();
+  $("#t-item").onchange=e=>t.item=e.target.value;
+  $("#t-tipo").onchange=e=>{t.tipo=e.target.value; body(); $("#t-est").textContent=estadoDe(t);};
+  $("#t-back").onclick=()=>{S.dEdit=null;S.tDraft=null;render();};
+  $("#t-pdf").onclick=()=>pdfFicha({...d,t:clean(t),item:t.item||d.item,auto:false,estado:estadoDe(t)});
+  $("#t-save").onclick=async()=>{
+    const data=clean(t); data.acciones=(data.acciones||[]).filter(a=>(a.actividad||"").trim());
+    const est=estadoDe(data); data.estado=est;
+    if(est==="Cerrada"&&!data.fechaCierre) data.fechaCierre=data.tipo==="inmediata"?d.fecha:today();
+    if(est!=="Cerrada") data.fechaCierre="";
+    data.actualizado=new Date().toISOString();
+    const btn=$("#t-save"); btn.disabled=true; btn.textContent="Guardando…";
+    try{ await saveTrat(d.key,data); toast("Tratamiento guardado ✓"); S.dEdit=null; S.tDraft=null; render(); }
+    catch(e){ btn.disabled=false; btn.textContent="Guardar tratamiento"; toast("No se pudo guardar el tratamiento.",true); }
+  };
+}
+function clean(t){ const o=JSON.parse(JSON.stringify(t)); delete o._key; return o; }
+
+function xlsRegistro(list){
+  const head=["Nº","Fecha detección","Sector","Origen","Ítem","Categoría","Descripción del desvío","Tratamiento","Corrección inmediata","Método de análisis","Análisis","Causa raíz","¿Modifica matriz R/O?","ID riesgo/oportunidad","¿Aprobación Dirección?","Aprobado por","Fecha aprobación","Acciones (actividad · responsable · fecha · estado)","Fecha compromiso","Eficacia","Fecha verificación","Verificado por","Obs. seguimiento","Estado","Fecha cierre"];
+  const rows=[head,...list.map(d=>{const t=d.t||{};return [d.nro,fdate(d.fecha),secName(d.sector),"Recorrida de planta",d.item||"",d.cat?CATS[d.cat-1].nombre:"Sin clasificar",d.texto,
+    t.tipo==="inmediata"?"Corrección inmediata":t.tipo==="nc"?"No conformidad":"Sin definir",t.correccion||"",t.metodo||"",t.analisis||"",t.causa||"",t.riesgo||"",t.riesgoId||"",t.aprobacion?"Sí":"No",t.aprobadoPor||"",fdate(t.fechaAprobacion),
+    (t.acciones||[]).map(a=>`${a.actividad} · ${a.responsable||"s/r"} · ${fdate(a.fecha)||"s/f"} · ${a.estado}`).join("\n"),fdate(d.compromiso),t.tipo==="nc"?(t.eficacia||"Pendiente"):"",fdate(t.fechaVerif),t.verificadoPor||"",t.obsVerif||"",d.estado+(d.vencida?" (vencida)":""),fdate(t.fechaCierre)];})];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws["!cols"]=[12,12,30,18,6,24,60,20,40,18,50,40,10,16,10,16,12,70,12,12,12,16,40,16,12].map(w=>({wch:w}));
+  ws["!autofilter"]={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:rows.length-1,c:head.length-1}})};
+  const sum=[["Resumen"],[],["Sector","Desvíos","Abiertos","Cerrados","Vencidos"],...SECTORES.map(s=>{const l=list.filter(d=>d.sector===s.id);return [s.nombre,l.length,l.filter(d=>d.estado!=="Cerrada").length,l.filter(d=>d.estado==="Cerrada").length,l.filter(d=>d.vencida).length];}),
+    [],["Categoría","Desvíos"],...CATS.map(c=>[c.nombre,list.filter(d=>d.cat===c.n).length]),["Sin clasificar",list.filter(d=>!d.cat).length],
+    [],["Mes","Desvíos"],...MESES.map((m,i)=>[m,list.filter(d=>+d.fecha.slice(5,7)===i+1).length])];
+  const w2=XLSX.utils.aoa_to_sheet(sum); w2["!cols"]=[{wch:42},{wch:10},{wch:10},{wch:10},{wch:10}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Registro Único NC"); XLSX.utils.book_append_sheet(wb,w2,"Resumen");
+  saveFile(`Registro_Unico_NC_${S.f.d.anio}${S.f.d.mes?"-"+S.f.d.mes:""}.xlsx`,new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})]));
+}
+
+function pdfFicha(d){
+  if(!d) return; const t=d.t||{};
+  const doc=new jspdf.jsPDF({unit:"mm",format:"a4"});
+  let y=pdfHeader(doc,"REGISTRO DE NO CONFORMIDAD",`${d.nro} · ${estadoDe(t)}`);
+  const L=(k,v)=>[{content:k,styles:{fontStyle:"bold",fillColor:[246,246,243],cellWidth:52}},v||"—"];
+  doc.autoTable({...AT,startY:y,body:[L("Fecha de detección",fdate(d.fecha)),L("Sector",secName(d.sector)),L("Origen","Recorrida de planta"+(d.responsableRec?" ("+d.responsableRec+")":"")),L("Ítem / motivo",catLabel(d)),L("Descripción",d.texto),
+    L("Tratamiento",t.tipo==="inmediata"?"Corrección inmediata":t.tipo==="nc"?"No conformidad – acción correctiva":"Sin definir")]});
+  y=lastY(doc);
+  if(t.tipo==="inmediata"){ y=pdfSection(doc,"CORRECCIÓN INMEDIATA",y); doc.autoTable({...AT,startY:y,body:[L("Corrección realizada",t.correccion),L("Fecha de cierre",fdate(t.fechaCierre))]}); }
+  if(t.tipo==="nc"){
+    y=pdfSection(doc,"ANÁLISIS DE CAUSAS",y);
+    doc.autoTable({...AT,startY:y,body:[L("Método",t.metodo),L("Análisis",t.analisis),L("Causa raíz",t.causa),L("¿Modifica matriz R/O?",t.riesgo),L("ID riesgo / oportunidad",t.riesgoId),L("¿Aprobación de Dirección?",t.aprobacion?`Sí – ${t.aprobadoPor||""} ${fdate(t.fechaAprobacion)}`:"No")]}); y=lastY(doc);
+    y=pdfSection(doc,"PLAN DE ACCIONES",y);
+    doc.autoTable({...AT,startY:y,head:[["Actividad","Responsable","Fecha compromiso","Estado"]],body:(t.acciones||[]).length?t.acciones.map(a=>[a.actividad,a.responsable,fdate(a.fecha),a.estado]):[["Sin acciones definidas","","",""]],columnStyles:{1:{cellWidth:35},2:{cellWidth:30},3:{cellWidth:24}}}); y=lastY(doc);
+    y=pdfSection(doc,"SEGUIMIENTO Y VERIFICACIÓN DE EFICACIA",y);
+    doc.autoTable({...AT,startY:y,body:[L("Eficacia",t.eficacia||"Pendiente"),L("Fecha verificación",fdate(t.fechaVerif)),L("Verificado por",t.verificadoPor),L("Observaciones",t.obsVerif),L("Fecha de cierre",fdate(t.fechaCierre))]});
+  }
+  pdfFooter(doc,"Registro Único de No Conformidades"); saveFile(`${d.nro}_${d.sector}.pdf`,doc.output("blob"));
+}
+
+/* ============ ARRANQUE ============ */
+const h=location.hash.slice(1); if(["nueva","historial","desvios","mensual","anual","global"].includes(h)) S.view=h;
+window.addEventListener("hashchange",()=>{const v=location.hash.slice(1); if(v&&v!==S.view&&["nueva","historial","desvios","mensual","anual","global"].includes(v)) go(v);});
+render();
+initData();
+</script>
+</body>
+</html>
